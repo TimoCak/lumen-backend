@@ -1,4 +1,4 @@
-use diesel::{Insertable, Queryable, Selectable};
+use diesel::{Queryable, Selectable};
 use serde::{Serialize, Deserialize};
 
 
