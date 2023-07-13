@@ -16,5 +16,6 @@ fn main() {
         println!("username: {}", user.username);
         println!("password: {}", user.password);
         println!("email: {}", user.email);
+        println!("role: {}", user.role);
     }
 }
