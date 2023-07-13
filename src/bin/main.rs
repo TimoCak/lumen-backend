@@ -3,9 +3,13 @@ use actix_web::{
     middleware::Logger,
     post,
     web::{get, scope, post},
-    App, HttpServer,
+    App, HttpServer, HttpResponse,
 };
 use env_logger::Env;
+
+pub async fn hello() -> HttpResponse {
+    HttpResponse::Ok().body("HI")
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -14,6 +18,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
         App::new()
+            .route("/", get().to(hello))
     })  
     .bind(("127.0.0.1", 8081))?
     .run()
