@@ -6,10 +6,7 @@ use actix_web::{
     App, HttpServer, HttpResponse,
 };
 use env_logger::Env;
-
-pub async fn hello() -> HttpResponse {
-    HttpResponse::Ok().body("HI")
-}
+use lumen_backend::endpoints::api::hello;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -21,6 +18,10 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .wrap(Logger::new("%a %{User-Agent}i"))
             .route("/", get().to(hello))
+            .service(
+                scope("/api")
+                    .route("/hello", get().to(hello))   
+            )
     })  
     .bind(("127.0.0.1", 8081))?
     .run()
