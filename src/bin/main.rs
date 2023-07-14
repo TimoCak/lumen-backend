@@ -6,7 +6,7 @@ use actix_web::{
     App, HttpServer, HttpResponse,
 };
 use env_logger::Env;
-use lumen_backend::endpoints::api::hello;
+use lumen_backend::endpoints::api::{hello, sign_up};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -20,7 +20,8 @@ async fn main() -> std::io::Result<()> {
             .route("/", get().to(hello))
             .service(
                 scope("/api")
-                    .route("/hello", get().to(hello))   
+                    .route("/hello", get().to(hello))
+                    .route("/sign-up", post().to(sign_up))   
             )
     })  
     .bind(("127.0.0.1", 8081))?
