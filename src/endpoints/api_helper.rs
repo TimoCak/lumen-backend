@@ -1,11 +1,10 @@
-use actix_web::{web::Json, HttpResponse, http::header::ContentType};
+use actix_web::{web::Json, HttpResponse};
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
 use crate::{models::user::{UserForm, User}, establish_connection};
 use crate::queries::insert_user::create_user;
-use serde_json::to_string;
 use crate::queries::select_users::get_users;
 
 /* 
@@ -49,10 +48,9 @@ pub fn validate_sign_up(user_form: Json<UserForm>) -> HttpResponse {
 
     let inserted_user = create_user(conn, user_form.username.as_str(), user_form.email.as_str(), password.as_str());
 
-    //eintrag in Datenbank
     HttpResponse::Ok()
-        .content_type(ContentType::json())
-        .body(to_string(&inserted_user).unwrap())
+        .body("post user successed!")
+  //.content_type(ContentType::json())
 }
 
 
