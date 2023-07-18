@@ -18,6 +18,11 @@ impl fmt::Display for Role {
     }
 }
 
+#[derive(Deserialize, Serialize, Debug)]
+pub struct UserLogin {
+    pub username: String,
+    pub password: String,
+}
 
 #[derive(Deserialize, Serialize)]
 pub struct UserForm {

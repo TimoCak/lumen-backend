@@ -1,4 +1,5 @@
-use actix_web::{web::Json, HttpResponse};
+use actix_session::Session;
+use actix_web::{web::Json, HttpResponse, cookie::Key};
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
@@ -50,13 +51,45 @@ pub fn validate_sign_up(user_form: Json<UserForm>) -> HttpResponse {
 
     HttpResponse::Ok()
         .body("post user successed!")
-  //.content_type(ContentType::json())
 }
 
 
 /*
 sign_in - validator
 */
-pub fn compare_password(password: String, hash_string: String) -> String {
-    todo!()
+fn compare_passwords(password: &String, hash_string: &String) -> bool {
+    let alg: &[&dyn PasswordVerifier] = &[&Argon2::default()];
+
+    let hash = PasswordHash::new(hash_string).unwrap();
+
+    match hash.verify_password(alg, password) {
+        Ok(()) => true,
+        Err(_) => false,
+    }
 }
+
+fn compare_users(form_username: &String,form_password: &String, db_username: &String ,db_pasword: &String) -> bool {
+    if form_username.eq(db_username) && compare_passwords(form_password, db_pasword) {
+        return true;
+    }
+    false
+}
+
+pub fn get_generated_key() -> Key {
+    Key::generate()
+}
+
+
+pub fn validate_sign_in(session: Session, username: &String, password: &String) -> HttpResponse {
+    if username.eq("") || password.eq("") {
+        return HttpResponse::BadRequest().body("please fill out all fields!");
+    }
+    for user in get_users() {
+        if compare_users(username, password, &user.username, &user.password) {
+            session.insert("userId", user.id).expect("insertion failed!");
+            return HttpResponse::Ok().body("succesfully logged in!");
+        }
+    }
+    HttpResponse::Unauthorized().body("username or password is wrong!")
+}
+
