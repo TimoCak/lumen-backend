@@ -9,8 +9,7 @@ use actix_cors::Cors;
 use dotenvy::dotenv;
 use env_logger::Env;
 use lumen_backend::endpoints::api::{hello, sign_up, sign_in, sign_out};
-use actix_session::{Session, SessionMiddleware, storage::CookieSessionStore};
-use lumen_backend::endpoints::api_helper::get_generated_key;
+use actix_session::{SessionMiddleware, storage::CookieSessionStore};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

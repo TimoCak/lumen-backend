@@ -1,5 +1,5 @@
 use actix_session::Session;
-use actix_web::{web::Json, HttpResponse, cookie::Key};
+use actix_web::{web::Json, HttpResponse};
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
@@ -74,11 +74,6 @@ fn compare_users(form_username: &String,form_password: &String, db_username: &St
     }
     false
 }
-
-pub fn get_generated_key() -> Key {
-    Key::generate()
-}
-
 
 pub fn validate_sign_in(session: Session, username: &String, password: &String) -> HttpResponse {
     if username.eq("") || password.eq("") {
