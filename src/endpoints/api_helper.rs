@@ -4,7 +4,7 @@ use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
-use crate::{models::user::{UserForm, User}, establish_connection};
+use crate::{models::user::{UserForm, User}, establish_connection, queries::select_user::get_user_by_username};
 use crate::queries::insert_user::create_user;
 use crate::queries::select_users::get_users;
 
@@ -79,7 +79,7 @@ pub fn validate_sign_in(session: Session, username: &String, password: &String) 
     if username.eq("") || password.eq("") {
         return HttpResponse::BadRequest().body("please fill out all fields!");
     }
-    for user in get_users() {
+    for user in get_user_by_username(username) {
         if compare_users(username, password, &user.username, &user.password) {
             session.insert("userId", user.id).expect("insertion failed!");
             return HttpResponse::Ok().body("succesfully logged in!");
