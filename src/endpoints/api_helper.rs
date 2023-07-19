@@ -94,6 +94,7 @@ pub fn validate_sign_in(session: Session, username: &String, password: &String) 
     struct ClientStoredUser {
         id: i32,
         username: String,
+        email: String,
     }
 
     if username.eq("") || password.eq("") {
@@ -109,6 +110,7 @@ pub fn validate_sign_in(session: Session, username: &String, password: &String) 
             let client_stored_user = ClientStoredUser {
                 id: user.id,
                 username: user.username,
+                email: user.email,
             }; 
             return HttpResponse::Ok()
                 .content_type(ContentType::json())
