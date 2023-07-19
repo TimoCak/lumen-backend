@@ -3,13 +3,13 @@ use std::env;
 use actix_web::{
     middleware::Logger,
     web::{get, scope, post},
-    App, HttpServer, cookie::Key,
+    App, HttpServer, cookie::{Key, SameSite},
 };
 use actix_cors::Cors;
 use dotenvy::dotenv;
 use env_logger::Env;
 use lumen_backend::endpoints::api::{hello, sign_up, sign_in, sign_out};
-use actix_session::{SessionMiddleware, storage::CookieSessionStore};
+use actix_session::{SessionMiddleware, storage::CookieSessionStore, config::{BrowserSession, CookieContentSecurity}};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -32,7 +32,15 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .wrap(Logger::default())
             .wrap(Logger::new("%a %{User-Agent}i"))
-            .wrap(SessionMiddleware::new(CookieSessionStore::default(), secret_key.clone()))
+            .wrap(SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
+                    .cookie_name(String::from("lumen-cookie"))
+                    .cookie_secure(true)
+                    .session_lifecycle(BrowserSession::default())
+                    .cookie_same_site(SameSite::None)
+                    .cookie_content_security(CookieContentSecurity::Private)
+                    .cookie_http_only(true)
+                    .build()
+                )
             .route("/", get().to(hello))
             .service(
                 scope("/api")

@@ -1,14 +1,21 @@
+use crate::queries::insert_user::create_user;
+use crate::queries::select_users::get_users;
+use crate::{
+    establish_connection,
+    models::user::{User, UserForm},
+    queries::select_user::get_user_by_username,
+};
 use actix_session::Session;
+use actix_web::http::header::ContentType;
 use actix_web::{web::Json, HttpResponse};
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
-use crate::{models::user::{UserForm, User}, establish_connection, queries::select_user::get_user_by_username};
-use crate::queries::insert_user::create_user;
-use crate::queries::select_users::get_users;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 
-/* 
+/*
 sign_up - validator
 */
 pub fn generate_hashed_password(password: &String) -> String {
@@ -19,7 +26,7 @@ pub fn generate_hashed_password(password: &String) -> String {
         .hash_password(password.as_bytes(), &salt)
         .expect("hash failed!")
         .to_string();
-    
+
     let parsed_hash = PasswordHash::new(&password_hash).expect("parsing hash failed!");
     parsed_hash.to_string()
 }
@@ -34,11 +41,10 @@ pub fn is_username_unique(username: &String, users: Vec<User>) -> bool {
 }
 
 pub fn validate_sign_up(user_form: Json<UserForm>) -> HttpResponse {
-
     if user_form.username.eq("") || user_form.email.eq("") || user_form.password.eq("") {
         return HttpResponse::BadRequest().body("fill out all input fields!");
     }
-    
+
     if !is_username_unique(&user_form.username, get_users()) {
         return HttpResponse::BadRequest().body("username is already taken!");
     }
@@ -47,12 +53,15 @@ pub fn validate_sign_up(user_form: Json<UserForm>) -> HttpResponse {
 
     let conn = &mut establish_connection();
 
-    let inserted_user = create_user(conn, user_form.username.as_str(), user_form.email.as_str(), password.as_str());
+    let inserted_user = create_user(
+        conn,
+        user_form.username.as_str(),
+        user_form.email.as_str(),
+        password.as_str(),
+    );
 
-    HttpResponse::Ok()
-        .body("post user successed!")
+    HttpResponse::Ok().body("post user successed!")
 }
-
 
 /*
 sign_in - validator
@@ -68,7 +77,12 @@ fn compare_passwords(password: &String, hash_string: &String) -> bool {
     }
 }
 
-fn compare_users(form_username: &String,form_password: &String, db_username: &String ,db_pasword: &String) -> bool {
+fn compare_users(
+    form_username: &String,
+    form_password: &String,
+    db_username: &String,
+    db_pasword: &String,
+) -> bool {
     if form_username.eq(db_username) && compare_passwords(form_password, db_pasword) {
         return true;
     }
@@ -76,15 +90,31 @@ fn compare_users(form_username: &String,form_password: &String, db_username: &St
 }
 
 pub fn validate_sign_in(session: Session, username: &String, password: &String) -> HttpResponse {
+
+    #[derive(Serialize, Deserialize)]
+    struct ClientStoredUser {
+        id: i32,
+        username: String,
+    }
+
     if username.eq("") || password.eq("") {
         return HttpResponse::BadRequest().body("please fill out all fields!");
     }
+    
     for user in get_user_by_username(username) {
         if compare_users(username, password, &user.username, &user.password) {
-            session.insert("userId", user.id).expect("insertion failed!");
-            return HttpResponse::Ok().body("succesfully logged in!");
+            session
+                .insert("userId", user.id)
+                .expect("insertion failed!");
+
+            let clientStoredUser = ClientStoredUser {
+                id: user.id,
+                username: user.username,
+            }; 
+            return HttpResponse::Ok()
+                .content_type(ContentType::json())
+                .body(serde_json::to_string(&clientStoredUser).unwrap());
         }
     }
     HttpResponse::Unauthorized().body("username or password is wrong!")
 }
-
