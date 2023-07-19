@@ -13,7 +13,6 @@ use argon2::{
     Argon2,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 
 /*
 sign_up - validator
@@ -100,20 +99,20 @@ pub fn validate_sign_in(session: Session, username: &String, password: &String) 
     if username.eq("") || password.eq("") {
         return HttpResponse::BadRequest().body("please fill out all fields!");
     }
-    
+
     for user in get_user_by_username(username) {
         if compare_users(username, password, &user.username, &user.password) {
             session
                 .insert("userId", user.id)
                 .expect("insertion failed!");
 
-            let clientStoredUser = ClientStoredUser {
+            let client_stored_user = ClientStoredUser {
                 id: user.id,
                 username: user.username,
             }; 
             return HttpResponse::Ok()
                 .content_type(ContentType::json())
-                .body(serde_json::to_string(&clientStoredUser).unwrap());
+                .body(serde_json::to_string(&client_stored_user).unwrap());
         }
     }
     HttpResponse::Unauthorized().body("username or password is wrong!")

@@ -37,7 +37,7 @@ async fn main() -> std::io::Result<()> {
                     .cookie_secure(true)
                     .session_lifecycle(BrowserSession::default())
                     .cookie_same_site(SameSite::None)
-                    .cookie_content_security(CookieContentSecurity::Private)
+                    .cookie_content_security(CookieContentSecurity::Signed)
                     .cookie_http_only(true)
                     .build()
                 )
