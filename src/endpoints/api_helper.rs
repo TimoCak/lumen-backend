@@ -15,7 +15,7 @@ use argon2::{
 use serde::{Deserialize, Serialize};
 
 /*
-sign_up - validator d
+sign_up - validator
 */
 pub fn generate_hashed_password(password: &String) -> String {
     let salt = SaltString::generate(&mut OsRng);
