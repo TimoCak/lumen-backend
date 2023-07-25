@@ -14,7 +14,7 @@ use actix_web::{
 };
 use dotenvy::dotenv;
 use env_logger::Env;
-use lumen_backend::endpoints::api::{create_post, hello, sign_in, sign_out, sign_up};
+use lumen_backend::endpoints::api::{create_post, get_posts, hello, sign_in, sign_out, sign_up, get_users};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -53,7 +53,9 @@ async fn main() -> std::io::Result<()> {
                     .route("/sign-up", post().to(sign_up))
                     .route("/sign-in", post().to(sign_in))
                     .route("/sign-out", post().to(sign_out))
-                    .route("/post", post().to(create_post)),
+                    .route("/users", get().to(get_users))
+                    .route("/post", post().to(create_post))
+                    .route("/posts", get().to(get_posts)),
             )
     })
     .bind(("127.0.0.1", 8081))?
