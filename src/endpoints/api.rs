@@ -1,7 +1,11 @@
-use actix_session::Session;
-use actix_web::{HttpResponse, web};
 use crate::endpoints::api_helper::validate_sign_up;
+use crate::establish_connection;
+use crate::models::post::PostForm;
 use crate::models::user::{UserForm, UserLogin};
+use crate::queries::insert_post;
+use actix_session::Session;
+use actix_web::http::header::ContentType;
+use actix_web::{web, HttpResponse};
 
 use super::api_helper::validate_sign_in;
 
@@ -20,4 +24,27 @@ pub async fn sign_in(session: Session, user_login: web::Json<UserLogin>) -> Http
 pub async fn sign_out(session: Session) -> HttpResponse {
     session.purge();
     HttpResponse::Ok().body("succesfully logged out!")
+}
+
+pub async fn create_post(session: Session, post_form: web::Json<PostForm>) -> HttpResponse {
+    if let Some(user_id) = session.get::<i32>("userId").expect("session getter error!") {
+        println!("user: {} is authorized!", user_id);
+    } else {
+        return HttpResponse::Unauthorized().body("This User is not authorized!");
+    }
+
+    if post_form.author.eq("") || post_form.title.eq("") || post_form.text.eq("") {
+        return HttpResponse::BadRequest().body("All fields must be filled!");
+    }
+    let conn = &mut establish_connection();
+
+    let inserted_post = insert_post::create_post(
+        conn,
+        post_form.author.as_str(),
+        post_form.title.as_str(),
+        post_form.text.as_str(),
+    );
+    HttpResponse::Created()
+        .content_type(ContentType::json())
+        .body(serde_json::to_string(&inserted_post).unwrap())
 }

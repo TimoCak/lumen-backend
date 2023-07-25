@@ -1,19 +1,23 @@
 use std::env;
 
-use actix_web::{
-    middleware::Logger,
-    web::{get, scope, post},
-    App, HttpServer, cookie::{Key, SameSite},
-};
 use actix_cors::Cors;
+use actix_session::{
+    config::{BrowserSession, CookieContentSecurity},
+    storage::CookieSessionStore,
+    SessionMiddleware,
+};
+use actix_web::{
+    cookie::{Key, SameSite},
+    middleware::Logger,
+    web::{get, post, scope},
+    App, HttpServer,
+};
 use dotenvy::dotenv;
 use env_logger::Env;
-use lumen_backend::endpoints::api::{hello, sign_up, sign_in, sign_out};
-use actix_session::{SessionMiddleware, storage::CookieSessionStore, config::{BrowserSession, CookieContentSecurity}};
+use lumen_backend::endpoints::api::{create_post, hello, sign_in, sign_out, sign_up};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-
     dotenv().ok();
 
     let secret_key = Key::generate();
@@ -32,24 +36,26 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .wrap(Logger::default())
             .wrap(Logger::new("%a %{User-Agent}i"))
-            .wrap(SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
+            .wrap(
+                SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
                     .cookie_name(String::from("lumen-cookie"))
                     .cookie_secure(true)
                     .session_lifecycle(BrowserSession::default())
                     .cookie_same_site(SameSite::None)
                     .cookie_content_security(CookieContentSecurity::Signed)
                     .cookie_http_only(true)
-                    .build()
-                )
+                    .build(),
+            )
             .route("/", get().to(hello))
             .service(
                 scope("/api")
                     .route("/hello", get().to(hello))
-                    .route("/sign-up", post().to(sign_up))   
+                    .route("/sign-up", post().to(sign_up))
                     .route("/sign-in", post().to(sign_in))
                     .route("/sign-out", post().to(sign_out))
+                    .route("/post", post().to(create_post)),
             )
-    })  
+    })
     .bind(("127.0.0.1", 8081))?
     .run()
     .await

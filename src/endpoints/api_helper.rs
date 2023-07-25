@@ -104,7 +104,7 @@ pub fn validate_sign_in(session: Session, username: &String, password: &String) 
     for user in get_user_by_username(username) {
         if compare_users(username, password, &user.username, &user.password) {
             session
-                .insert("userId", user.id)
+                .insert("userId", user.id as i32)
                 .expect("insertion failed!");
 
             let client_stored_user = ClientStoredUser {
