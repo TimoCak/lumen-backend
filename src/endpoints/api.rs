@@ -92,6 +92,7 @@ pub async fn create_post(session: Session, post_form: web::Json<PostForm>) -> Ht
 
     let inserted_post = insert_post::create_post(
         conn,
+        post_form.thread_id,
         post_form.author.as_str(),
         post_form.title.as_str(),
         post_form.text.as_str(),
