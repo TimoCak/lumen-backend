@@ -8,6 +8,7 @@ use std::time::SystemTime;
 pub struct Post {
     pub id: i32,
     pub thread_id: i32,
+    pub answer_id: Option<i32>,
     pub author: String,
     pub created_at: Option<SystemTime>,
     pub title: String,

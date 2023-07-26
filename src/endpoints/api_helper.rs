@@ -106,6 +106,10 @@ pub fn validate_sign_in(session: Session, username: &String, password: &String) 
             session
                 .insert("userId", user.id as i32)
                 .expect("insertion failed!");
+            
+            session
+                .insert("username", &user.username)
+                .expect("insertion failed!");
 
             let client_stored_user = ClientStoredUser {
                 id: user.id,

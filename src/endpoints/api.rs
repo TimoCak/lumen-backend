@@ -79,9 +79,15 @@ pub async fn get_posts() -> HttpResponse {
 
 //User
 pub async fn create_post(session: Session, post_form: web::Json<PostForm>) -> HttpResponse {
-    if let Some(user_id) = session.get::<i32>("userId").expect("session getter error!") {
-        println!("user: {} is authorized!", user_id);
+    if let Some(user_id) = session.get::<i32>("userId").expect("get session userId error!") {
+        println!("user_id: {user_id} is set!");
     } else {
+        return HttpResponse::Unauthorized().body("This User is not authorized!");
+    }
+
+    let session_username = session.get::<String>("username").expect("get session username error").unwrap();
+
+    if !session_username.eq(&post_form.author) {
         return HttpResponse::Unauthorized().body("This User is not authorized!");
     }
 

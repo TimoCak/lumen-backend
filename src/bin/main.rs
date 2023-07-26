@@ -59,7 +59,7 @@ async fn main() -> std::io::Result<()> {
                     .route("/user/{username}", get().to(get_user))
                     .route("/users", get().to(get_users))
                     .route("/users/{user_id}", get().to(get_user_by_id))
-                    .route("/post", post().to(create_post))
+                    .route("/posts", post().to(create_post))
                     .route("/posts/{post_id}", get().to(get_post_by_id))
                     .route("/posts", get().to(get_posts)),
             )

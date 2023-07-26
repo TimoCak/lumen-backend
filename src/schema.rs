@@ -4,6 +4,7 @@ diesel::table! {
     posts (id) {
         id -> Int4,
         thread_id -> Int4,
+        answer_id -> Nullable<Int4>,
         author -> Varchar,
         created_at -> Nullable<Timestamp>,
         title -> Varchar,
