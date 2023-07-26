@@ -2,7 +2,7 @@ use crate::endpoints::api_helper::validate_sign_up;
 use crate::establish_connection;
 use crate::models::post::PostForm;
 use crate::models::user::{UserForm, UserLogin};
-use crate::queries::{insert_post, select_posts, select_users};
+use crate::queries::{insert_post, select_posts, select_user, select_users, select_post};
 use actix_session::Session;
 use actix_web::http::header::ContentType;
 use actix_web::{web, HttpResponse};
@@ -27,13 +27,51 @@ pub async fn sign_out(session: Session) -> HttpResponse {
     HttpResponse::Ok().body("succesfully logged out!")
 }
 
-pub async fn get_users() -> HttpResponse{
+pub async fn get_user_by_id(path: web::Path<i32>) -> HttpResponse {
+    let list = &select_user::get_user_by_user_id(path.clone());
+
+    if list.len() == 0 {
+        return HttpResponse::NotFound().body("user does not exist!");
+    }
+
+    HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .body(serde_json::to_string(list).unwrap())
+}
+
+pub async fn get_user(path: web::Path<String>) -> HttpResponse {
+    let list = &select_user::get_user_by_username(&path);
+
+    if list.len() == 0 {
+        return HttpResponse::NotFound().body("user does not exist!");
+    }
+
+    HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .body(serde_json::to_string(list).unwrap())
+}
+
+pub async fn get_users() -> HttpResponse {
     HttpResponse::Ok()
         .content_type(ContentType::json())
         .body(serde_json::to_string(&select_users::get_users()).unwrap())
 }
 
-pub async fn get_posts() -> HttpResponse{
+pub async fn get_post_by_id(path: web::Path<i32>) -> HttpResponse {
+
+    let list = &select_post::get_post_by_post_id(path.clone());
+
+    if list.len() == 0 {
+        return HttpResponse::NotFound().body("post does not exist!");
+    }
+
+    HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .body(serde_json::to_string(list).unwrap())
+
+}
+
+pub async fn get_posts() -> HttpResponse {
     HttpResponse::Ok()
         .content_type(ContentType::json())
         .body(serde_json::to_string(&select_posts::get_posts()).unwrap())
