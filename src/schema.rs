@@ -15,6 +15,19 @@ diesel::table! {
 }
 
 diesel::table! {
+    threads (id) {
+        id -> Int4,
+        author -> Varchar,
+        created_at -> Nullable<Timestamp>,
+        title -> Varchar,
+        text -> Varchar,
+        likes -> Nullable<Int4>,
+        dislikes -> Nullable<Int4>,
+        categories -> Array<Nullable<Text>>,
+    }
+}
+
+diesel::table! {
     users (id) {
         id -> Int4,
         username -> Varchar,
@@ -26,5 +39,6 @@ diesel::table! {
 
 diesel::allow_tables_to_appear_in_same_query!(
     posts,
+    threads,
     users,
 );

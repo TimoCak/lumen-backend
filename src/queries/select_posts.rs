@@ -26,3 +26,15 @@ pub fn get_posts_by_answer_id(filter_answer_id: i32) -> Vec<Post> {
 
     results
 }
+
+pub fn get_posts_by_thread_id(filter_thread_id: i32) -> Vec<Post> {
+    let conn = &mut establish_connection();
+
+    let results = posts
+        .filter(thread_id.eq(filter_thread_id))
+        .select(Post::as_select())
+        .load(conn)
+        .expect("error loading posts!");
+
+    results
+}

@@ -77,6 +77,13 @@ pub async fn get_posts() -> HttpResponse {
         .body(serde_json::to_string(&select_posts::get_posts()).unwrap())
 }
 
+pub async fn get_posts_by_answer_id() -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+
+pub async fn get_posts_by_thread_id() -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
 //User
 pub async fn create_post(session: Session, post_form: web::Json<PostForm>) -> HttpResponse {
     if let Some(user_id) = session.get::<i32>("userId").expect("get session userId error!") {
