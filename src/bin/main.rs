@@ -16,7 +16,7 @@ use dotenvy::dotenv;
 use env_logger::Env;
 use lumen_backend::endpoints::api::{
     create_post, get_post_by_id, get_posts, get_posts_by_answer_id, get_posts_by_thread_id ,get_user, get_user_by_id, get_users, hello, sign_in,
-    sign_out, sign_up,
+    sign_out, sign_up, get_threads, get_threads_by_id, create_thread
 };
 
 #[actix_web::main]
@@ -63,7 +63,11 @@ async fn main() -> std::io::Result<()> {
                     .route("/posts", post().to(create_post))
                     .route("/posts/{post_id}", get().to(get_post_by_id))
                     .route("/posts/answers/{answer_id}", get().to(get_posts_by_answer_id))
-                    .route("/posts/threads/{thread_id}", get().to(get_posts_by_thread_id)),
+                    .route("/posts/threads/{thread_id}", get().to(get_posts_by_thread_id))
+                    .route("/threads", get().to(get_threads))
+                    .route("/threads", post().to(create_thread))
+                    .route("/threads/{thread_id}", get().to(get_threads_by_id))
+                    ,
             )
     })
     .bind(("127.0.0.1", 8081))?

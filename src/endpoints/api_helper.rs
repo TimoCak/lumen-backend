@@ -52,7 +52,7 @@ pub fn validate_sign_up(user_form: Json<UserForm>) -> HttpResponse {
 
     let conn = &mut establish_connection();
 
-    let inserted_user = create_user(
+    let _inserted_user = create_user(
         conn,
         user_form.username.as_str(),
         user_form.email.as_str(),
