@@ -126,7 +126,7 @@ pub async fn create_thread(session: Session, thread_form: web::Json<ThreadForm>)
         return HttpResponse::Unauthorized().body("This User is not authorized!");
     }
 
-    if thread_form.author.eq("") || thread_form.title.eq("") || thread_form.text.eq("") || thread_form.categories.len()==0 {
+    if thread_form.author.eq("") || thread_form.title.eq("") || thread_form.text.eq("") {
         return HttpResponse::BadRequest().body("All fields must be filled!");
     }
     let conn = &mut establish_connection();
