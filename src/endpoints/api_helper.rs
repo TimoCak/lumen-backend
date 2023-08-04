@@ -88,9 +88,12 @@ fn compare_users(
     false
 }
 
-pub fn validate_sign_in(session: Session, username: &String, password: &String) -> HttpResponse {
-
-    #[derive(Serialize, Deserialize)]
+pub fn validate_sign_in(
+    session: Session,
+    username: &String,
+    password: &String,
+) -> HttpResponse {
+    #[derive(Serialize, Deserialize, Default)]
     struct ClientStoredUser {
         id: i32,
         username: String,
@@ -101,21 +104,28 @@ pub fn validate_sign_in(session: Session, username: &String, password: &String) 
         return HttpResponse::BadRequest().body("please fill out all fields!");
     }
 
+    let mut user = ClientStoredUser::default();
+
     for user in get_user_by_username(username) {
         if compare_users(username, password, &user.username, &user.password) {
-            session
-                .insert("userId", user.id as i32)
-                .expect("insertion failed!");
             
-            session
-                .insert("username", &user.username)
-                .expect("insertion failed!");
+            if let Ok(()) = session.insert("userId", &user.username) {
+                println!("insertion successed!")
+            } else {
+                return HttpResponse::InternalServerError().finish();
+            }
+
+            if let Ok(()) = session.insert("username", &user.username) {
+                println!("insertion successed!")
+            } else {
+                return HttpResponse::InternalServerError().finish();
+            }
 
             let client_stored_user = ClientStoredUser {
                 id: user.id,
                 username: user.username,
                 email: user.email,
-            }; 
+            };
             return HttpResponse::Ok()
                 .content_type(ContentType::json())
                 .body(serde_json::to_string(&client_stored_user).unwrap());
