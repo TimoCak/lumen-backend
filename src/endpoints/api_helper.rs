@@ -12,6 +12,7 @@ use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
+use log::info;
 use serde::{Deserialize, Serialize};
 
 /*
@@ -88,12 +89,8 @@ fn compare_users(
     false
 }
 
-pub fn validate_sign_in(
-    session: Session,
-    username: &String,
-    password: &String,
-) -> HttpResponse {
-    #[derive(Serialize, Deserialize, Default)]
+pub fn validate_sign_in(session: Session, username: &String, password: &String) -> HttpResponse {
+    #[derive(Serialize, Deserialize, Default, Clone)]
     struct ClientStoredUser {
         id: i32,
         username: String,
@@ -104,32 +101,30 @@ pub fn validate_sign_in(
         return HttpResponse::BadRequest().body("please fill out all fields!");
     }
 
-    let mut user = ClientStoredUser::default();
+    let mut found = false;
+
+    let mut client_stored_user = ClientStoredUser::default();
 
     for user in get_user_by_username(username) {
         if compare_users(username, password, &user.username, &user.password) {
-            
-            if let Ok(()) = session.insert("userId", &user.username) {
-                println!("insertion successed!")
-            } else {
-                return HttpResponse::InternalServerError().finish();
-            }
-
-            if let Ok(()) = session.insert("username", &user.username) {
-                println!("insertion successed!")
-            } else {
-                return HttpResponse::InternalServerError().finish();
-            }
-
-            let client_stored_user = ClientStoredUser {
+            found = true;
+           client_stored_user = ClientStoredUser {
                 id: user.id,
                 username: user.username,
                 email: user.email,
             };
-            return HttpResponse::Ok()
-                .content_type(ContentType::json())
-                .body(serde_json::to_string(&client_stored_user).unwrap());
+            break;
         }
+    }
+
+    if found {
+        match session.insert("clientUser", client_stored_user.clone()) {
+            Ok(()) => info!("INSERTION SUCCESSED!"),
+            Err(e) => info!("INSERTION FAILED! {}", e),
+        };
+        return HttpResponse::Ok()
+            .content_type(ContentType::json())
+            .body(serde_json::to_string(&client_stored_user).unwrap());
     }
     HttpResponse::Unauthorized().body("username or password is wrong!")
 }

@@ -57,7 +57,7 @@ async fn main() -> std::io::Result<()> {
                     .cookie_name(String::from("lumen-cookie"))
                     .cookie_secure(true)
                     .session_lifecycle(BrowserSession::default())
-                    .cookie_same_site(SameSite::None)
+                    .cookie_same_site(SameSite::Lax)
                     .cookie_content_security(CookieContentSecurity::Private)
                     .cookie_http_only(true)
                     .build(),

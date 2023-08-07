@@ -1,6 +1,7 @@
+use std::fmt;
+
 use diesel::{Queryable, Selectable, Insertable};
 use serde::{Serialize, Deserialize};
-use std::fmt;
 
 
 #[derive(Debug)]
@@ -31,7 +32,7 @@ pub struct UserForm {
     pub password: String,
 }
 
-#[derive(Queryable, Selectable, Serialize)]
+#[derive(Queryable, Selectable, Serialize, Deserialize, Clone, Default)]
 #[diesel(table_name = crate::schema::users)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct User {

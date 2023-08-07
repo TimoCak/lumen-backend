@@ -2,16 +2,17 @@ use crate::endpoints::api_helper::validate_sign_up;
 use crate::establish_connection;
 use crate::models::post::PostForm;
 use crate::models::thread::ThreadForm;
-use crate::models::user::{UserForm, UserLogin};
+use crate::models::user::{User, UserForm, UserLogin};
 use crate::queries::{
     insert_post, insert_thread, select_post, select_posts, select_threads, select_user,
     select_users,
 };
 use actix_session::Session;
 use actix_web::http::header::ContentType;
-use actix_web::{web, HttpResponse, options};
+use actix_web::{options, web, HttpResponse};
 
 use super::api_helper::validate_sign_in;
+use log::info;
 
 //Guest
 pub async fn hello() -> HttpResponse {
@@ -108,23 +109,21 @@ pub async fn get_threads_by_id(id: web::Path<i32>) -> HttpResponse {
 
 //User
 pub async fn create_thread(session: Session, thread_form: web::Json<ThreadForm>) -> HttpResponse {
-    let user_id = session.get::<i32>("userId");
+    let client_user = &session.get::<User>("clientUser");
 
-    match user_id {
+    let mut client_user_check = User::default();
+    match client_user {
         Ok(v) => match v {
-            Some(w) => w,
-            None => return HttpResponse::Unauthorized().body("This User is not authorized! NONE VALUE"),
+            Some(t) => client_user_check = t.clone(),
+            None => info!("NO VALUE CONTAINED!"),
         },
-        Err(e) => return HttpResponse::Unauthorized().body(format!("couldn't get data out of session! {:?}", e)),
-    };
+        Err(e) => info!("{}", e),
+    }
 
-    let session_username = session
-        .get::<String>("username")
-        .expect("get session username error")
-        .unwrap();
+    info!("USERNAME!: {}", client_user_check.email);
 
-    if !session_username.eq(&thread_form.author) {
-        return HttpResponse::Unauthorized().body("user is not the same as the author!");
+    if client_user_check.username.ne(&thread_form.author) {
+        return HttpResponse::Unauthorized().body("User is not authorized!");
     }
 
     if thread_form.author.eq("") || thread_form.title.eq("") || thread_form.text.eq("") {
@@ -149,17 +148,20 @@ pub async fn create_post(session: Session, post_form: web::Json<PostForm>) -> Ht
         .get::<i32>("userId")
         .expect("get session userId error!")
     {
-        println!("user_id: {user_id} is set!");
+        info!("user_id: {user_id} is set!");
     } else {
         return HttpResponse::Unauthorized().body("This User is not authorized!");
     }
 
-    let session_username = session
+    if let Some(session_username) = session
         .get::<String>("username")
         .expect("get session username error")
-        .unwrap();
-
-    if !session_username.eq(&post_form.author) {
+    {
+        info!("username: {session_username} is set!");
+        if !session_username.eq(&post_form.author) {
+            return HttpResponse::Unauthorized().body("This User is not authorized!");
+        }
+    } else {
         return HttpResponse::Unauthorized().body("This User is not authorized!");
     }
 
@@ -183,6 +185,6 @@ pub async fn create_post(session: Session, post_form: web::Json<PostForm>) -> Ht
 #[options("/threads")]
 pub async fn threads_methods() -> HttpResponse {
     HttpResponse::NoContent()
-        .append_header(("Allow","GET, HEAD, POST"))
+        .append_header(("Allow", "GET, HEAD, POST"))
         .finish()
 }
