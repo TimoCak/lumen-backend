@@ -1,8 +1,7 @@
 use std::fmt;
 
-use diesel::{Queryable, Selectable, Insertable};
-use serde::{Serialize, Deserialize};
-
+use diesel::{Insertable, Queryable, Selectable};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 pub enum Role {
@@ -50,4 +49,11 @@ pub struct NewUser {
     pub email: String,
     pub password: String,
     pub role: String,
+}
+
+#[derive(Serialize, Deserialize, Default, Clone, fmt::Debug)]
+pub struct ClientStoredUser {
+    pub id: i32,
+    pub username: String,
+    pub email: String,
 }

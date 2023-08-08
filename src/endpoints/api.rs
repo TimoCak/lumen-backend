@@ -1,8 +1,9 @@
-use crate::endpoints::api_helper::validate_sign_up;
+use crate::endpoints::api_helper::{compare_users, validate_sign_up};
 use crate::establish_connection;
 use crate::models::post::PostForm;
 use crate::models::thread::ThreadForm;
-use crate::models::user::{User, UserForm, UserLogin};
+use crate::models::user::{ClientStoredUser, UserForm, UserLogin};
+use crate::queries::select_user::get_user_by_username;
 use crate::queries::{
     insert_post, insert_thread, select_post, select_posts, select_threads, select_user,
     select_users,
@@ -10,8 +11,6 @@ use crate::queries::{
 use actix_session::Session;
 use actix_web::http::header::ContentType;
 use actix_web::{options, web, HttpResponse};
-
-use super::api_helper::validate_sign_in;
 use log::info;
 
 //Guest
@@ -24,7 +23,39 @@ pub async fn sign_up(user_form: web::Json<UserForm>) -> HttpResponse {
 }
 
 pub async fn sign_in(session: Session, user_login: web::Json<UserLogin>) -> HttpResponse {
-    validate_sign_in(session.clone(), &user_login.username, &user_login.password)
+    if user_login.username.eq("") || user_login.password.eq("") {
+        return HttpResponse::BadRequest().body("please fill out all fields!");
+    }
+
+    let mut found = false;
+
+    let mut client_stored_user = ClientStoredUser::default();
+
+    for user in get_user_by_username(&user_login.username) {
+        if compare_users(&user_login.username, &user_login.password, &user.username, &user.password) {
+            found = true;
+
+            client_stored_user = ClientStoredUser {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+            };
+
+            break;
+        }
+    }
+
+    if found {
+        info!("\nUSER: {:?}", client_stored_user.clone());
+        match session.insert("client_user", client_stored_user.clone()) {
+            Ok(_) => info!("INSERTION SUCCESSED! {:?}", session.entries()),
+            Err(e) => info!("INSERTION FAILED! {}", e),
+        };
+        return HttpResponse::Ok()
+            .content_type(ContentType::json())
+            .body(serde_json::to_string(&client_stored_user).unwrap());
+    }
+    HttpResponse::Unauthorized().body("username or password is wrong!")
 }
 
 pub async fn sign_out(session: Session) -> HttpResponse {
@@ -109,20 +140,20 @@ pub async fn get_threads_by_id(id: web::Path<i32>) -> HttpResponse {
 
 //User
 pub async fn create_thread(session: Session, thread_form: web::Json<ThreadForm>) -> HttpResponse {
-    let client_user = &session.get::<User>("clientUser");
+    let client_user = session.get::<ClientStoredUser>("client_user");
 
-    let mut client_user_check = User::default();
+    let mut username = String::from("");
     match client_user {
         Ok(v) => match v {
-            Some(t) => client_user_check = t.clone(),
+            Some(t) => username = t.clone().username,
             None => info!("NO VALUE CONTAINED!"),
         },
         Err(e) => info!("{}", e),
-    }
+    };
 
-    info!("USERNAME!: {}", client_user_check.email);
+    info!("ENTRIES!: {:?}", session.entries());
 
-    if client_user_check.username.ne(&thread_form.author) {
+    if username.ne(&thread_form.author) {
         return HttpResponse::Unauthorized().body("User is not authorized!");
     }
 

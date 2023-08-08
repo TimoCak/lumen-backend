@@ -3,17 +3,12 @@ use crate::queries::select_users::get_users;
 use crate::{
     establish_connection,
     models::user::{User, UserForm},
-    queries::select_user::get_user_by_username,
 };
-use actix_session::Session;
-use actix_web::http::header::ContentType;
 use actix_web::{web::Json, HttpResponse};
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
-use log::info;
-use serde::{Deserialize, Serialize};
 
 /*
 sign_up - validator
@@ -66,7 +61,7 @@ pub fn validate_sign_up(user_form: Json<UserForm>) -> HttpResponse {
 /*
 sign_in - validator
 */
-fn compare_passwords(password: &String, hash_string: &String) -> bool {
+pub fn compare_passwords(password: &String, hash_string: &String) -> bool {
     let alg: &[&dyn PasswordVerifier] = &[&Argon2::default()];
 
     let hash = PasswordHash::new(hash_string).unwrap();
@@ -77,7 +72,7 @@ fn compare_passwords(password: &String, hash_string: &String) -> bool {
     }
 }
 
-fn compare_users(
+pub fn compare_users(
     form_username: &String,
     form_password: &String,
     db_username: &String,
@@ -87,44 +82,4 @@ fn compare_users(
         return true;
     }
     false
-}
-
-pub fn validate_sign_in(session: Session, username: &String, password: &String) -> HttpResponse {
-    #[derive(Serialize, Deserialize, Default, Clone)]
-    struct ClientStoredUser {
-        id: i32,
-        username: String,
-        email: String,
-    }
-
-    if username.eq("") || password.eq("") {
-        return HttpResponse::BadRequest().body("please fill out all fields!");
-    }
-
-    let mut found = false;
-
-    let mut client_stored_user = ClientStoredUser::default();
-
-    for user in get_user_by_username(username) {
-        if compare_users(username, password, &user.username, &user.password) {
-            found = true;
-           client_stored_user = ClientStoredUser {
-                id: user.id,
-                username: user.username,
-                email: user.email,
-            };
-            break;
-        }
-    }
-
-    if found {
-        match session.insert("clientUser", client_stored_user.clone()) {
-            Ok(()) => info!("INSERTION SUCCESSED!"),
-            Err(e) => info!("INSERTION FAILED! {}", e),
-        };
-        return HttpResponse::Ok()
-            .content_type(ContentType::json())
-            .body(serde_json::to_string(&client_stored_user).unwrap());
-    }
-    HttpResponse::Unauthorized().body("username or password is wrong!")
 }

@@ -8,7 +8,6 @@ use actix_session::{
 };
 use actix_web::{
     cookie::{Key, SameSite},
-    http::Method,
     middleware::Logger,
     web::{get, post, scope},
     App, HttpServer,
@@ -40,8 +39,8 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let frontend_url = env::var("FRONTEND_URL").expect("FRONTEND_URL must be set!");
         let cors = Cors::default()
-            .allowed_origin(&frontend_url)
-            .allowed_methods([Method::OPTIONS, Method::GET, Method::HEAD, Method::POST])
+            .allow_any_origin()
+            .allow_any_method()
             .supports_credentials()
             .allow_any_header()
             .max_age(3600);
@@ -50,18 +49,18 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .wrap(cors)
-            .wrap(Logger::default())
-            .wrap(Logger::new("%a %{User-Agent}i"))
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
                     .cookie_name(String::from("lumen-cookie"))
                     .cookie_secure(true)
                     .session_lifecycle(BrowserSession::default())
-                    .cookie_same_site(SameSite::Lax)
+                    .cookie_same_site(SameSite::None)
                     .cookie_content_security(CookieContentSecurity::Private)
                     .cookie_http_only(true)
                     .build(),
             )
+            .wrap(Logger::default())
+            .wrap(Logger::new("%a %{User-Agent}i"))
             .route("/", get().to(hello))
             .service(
                 scope("/api")
