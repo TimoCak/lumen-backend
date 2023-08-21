@@ -9,8 +9,9 @@ use crate::queries::{
     select_users,
 };
 use actix_session::Session;
-use actix_web::http::header::ContentType;
-use actix_web::{options, web, HttpResponse};
+use actix_web::http::header::{ContentType, Header};
+use actix_web::{options, web, HttpResponse, HttpRequest};
+use actix_web_httpauth::headers::authorization::{Basic, Authorization};
 use log::info;
 
 //Guest
@@ -39,6 +40,7 @@ pub async fn sign_in(session: Session, user_login: web::Json<UserLogin>) -> Http
                 id: user.id,
                 username: user.username,
                 email: user.email,
+                password: user.password,
             };
 
             break;
@@ -139,22 +141,20 @@ pub async fn get_threads_by_id(id: web::Path<i32>) -> HttpResponse {
 }
 
 //User
-pub async fn create_thread(session: Session, thread_form: web::Json<ThreadForm>) -> HttpResponse {
-    let client_user = session.get::<ClientStoredUser>("client_user");
+pub async fn create_thread(req: HttpRequest, thread_form: web::Json<ThreadForm>) -> HttpResponse {
 
-    let mut username = String::from("");
-    match client_user {
-        Ok(v) => match v {
-            Some(t) => username = t.clone().username,
-            None => info!("NO VALUE CONTAINED!"),
-        },
-        Err(e) => info!("{}", e),
-    };
+    let auth = Authorization::<Basic>::parse(&req).expect("parsed basic auth credentials");
+    let user = get_user_by_username(&auth.as_ref().user_id().to_string());
+    
+    let username_db = &user.get(0).unwrap().username;
+    let password_db = &user.get(0).unwrap().password;
 
-    info!("ENTRIES!: {:?}", session.entries());
+    if auth.as_ref().password().unwrap().ne(password_db) || auth.as_ref().user_id().ne(username_db) {
+        return HttpResponse::Unauthorized().body("username or password is invalid!");
+    }
 
-    if username.ne(&thread_form.author) {
-        return HttpResponse::Unauthorized().body("User is not authorized!");
+    if username_db.ne(&thread_form.author) {
+        return HttpResponse::Unauthorized().body("user does not match the author!");
     }
 
     if thread_form.author.eq("") || thread_form.title.eq("") || thread_form.text.eq("") {
@@ -174,26 +174,19 @@ pub async fn create_thread(session: Session, thread_form: web::Json<ThreadForm>)
         .body(serde_json::to_string(&inserted_thread).unwrap())
 }
 
-pub async fn create_post(session: Session, post_form: web::Json<PostForm>) -> HttpResponse {
-    if let Some(user_id) = session
-        .get::<i32>("userId")
-        .expect("get session userId error!")
-    {
-        info!("user_id: {user_id} is set!");
-    } else {
-        return HttpResponse::Unauthorized().body("This User is not authorized!");
+pub async fn create_post(req: HttpRequest, post_form: web::Json<PostForm>) -> HttpResponse {
+    let auth = Authorization::<Basic>::parse(&req).expect("parsed basic auth credentials");
+    let user = get_user_by_username(&auth.as_ref().user_id().to_string());
+    
+    let username_db = &user.get(0).unwrap().username;
+    let password_db = &user.get(0).unwrap().password;
+
+    if auth.as_ref().password().unwrap().ne(password_db) || auth.as_ref().user_id().ne(username_db) {
+        return HttpResponse::Unauthorized().body("username or password is invalid!");
     }
 
-    if let Some(session_username) = session
-        .get::<String>("username")
-        .expect("get session username error")
-    {
-        info!("username: {session_username} is set!");
-        if !session_username.eq(&post_form.author) {
-            return HttpResponse::Unauthorized().body("This User is not authorized!");
-        }
-    } else {
-        return HttpResponse::Unauthorized().body("This User is not authorized!");
+    if username_db.ne(&post_form.author) {
+        return HttpResponse::Unauthorized().body("user does not match the author!");
     }
 
     if post_form.author.eq("") || post_form.title.eq("") || post_form.text.eq("") {

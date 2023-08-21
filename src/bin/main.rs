@@ -39,7 +39,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let frontend_url = env::var("FRONTEND_URL").expect("FRONTEND_URL must be set!");
         let cors = Cors::default()
-            .allow_any_origin()
+            .allowed_origin(&frontend_url)
             .allow_any_method()
             .supports_credentials()
             .allow_any_header()
