@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use lumen_backend::{*, models::user::User};
+use lumen_backend::{models::user::User, *};
 
 fn main() {
     use self::schema::users::dsl::*;

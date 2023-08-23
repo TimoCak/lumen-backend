@@ -1,4 +1,4 @@
-use diesel::{PgConnection, SelectableHelper, RunQueryDsl};
+use diesel::{PgConnection, RunQueryDsl, SelectableHelper};
 
 use crate::models::user::{NewUser, Role, User};
 

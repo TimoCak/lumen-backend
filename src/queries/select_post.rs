@@ -1,5 +1,5 @@
+use crate::{models::post::Post, *};
 use diesel::prelude::*;
-use crate::{*, models::post::Post};
 
 pub fn get_post_by_post_id(filter_post_id: i32) -> Vec<Post> {
     use self::schema::posts::dsl::*;

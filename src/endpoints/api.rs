@@ -10,8 +10,8 @@ use crate::queries::{
 };
 use actix_session::Session;
 use actix_web::http::header::{ContentType, Header};
-use actix_web::{options, web, HttpResponse, HttpRequest};
-use actix_web_httpauth::headers::authorization::{Basic, Authorization};
+use actix_web::{options, web, HttpRequest, HttpResponse};
+use actix_web_httpauth::headers::authorization::{Authorization, Basic};
 use log::info;
 
 //Guest
@@ -33,7 +33,12 @@ pub async fn sign_in(session: Session, user_login: web::Json<UserLogin>) -> Http
     let mut client_stored_user = ClientStoredUser::default();
 
     for user in get_user_by_username(&user_login.username) {
-        if compare_users(&user_login.username, &user_login.password, &user.username, &user.password) {
+        if compare_users(
+            &user_login.username,
+            &user_login.password,
+            &user.username,
+            &user.password,
+        ) {
             found = true;
 
             client_stored_user = ClientStoredUser {
@@ -142,14 +147,14 @@ pub async fn get_threads_by_id(id: web::Path<i32>) -> HttpResponse {
 
 //User
 pub async fn create_thread(req: HttpRequest, thread_form: web::Json<ThreadForm>) -> HttpResponse {
-
     let auth = Authorization::<Basic>::parse(&req).expect("parsed basic auth credentials");
     let user = get_user_by_username(&auth.as_ref().user_id().to_string());
-    
+
     let username_db = &user.get(0).unwrap().username;
     let password_db = &user.get(0).unwrap().password;
 
-    if auth.as_ref().password().unwrap().ne(password_db) || auth.as_ref().user_id().ne(username_db) {
+    if auth.as_ref().password().unwrap().ne(password_db) || auth.as_ref().user_id().ne(username_db)
+    {
         return HttpResponse::Unauthorized().body("username or password is invalid!");
     }
 
@@ -177,11 +182,12 @@ pub async fn create_thread(req: HttpRequest, thread_form: web::Json<ThreadForm>)
 pub async fn create_post(req: HttpRequest, post_form: web::Json<PostForm>) -> HttpResponse {
     let auth = Authorization::<Basic>::parse(&req).expect("parsed basic auth credentials");
     let user = get_user_by_username(&auth.as_ref().user_id().to_string());
-    
+
     let username_db = &user.get(0).unwrap().username;
     let password_db = &user.get(0).unwrap().password;
 
-    if auth.as_ref().password().unwrap().ne(password_db) || auth.as_ref().user_id().ne(username_db) {
+    if auth.as_ref().password().unwrap().ne(password_db) || auth.as_ref().user_id().ne(username_db)
+    {
         return HttpResponse::Unauthorized().body("username or password is invalid!");
     }
 

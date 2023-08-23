@@ -1,5 +1,5 @@
+use crate::{models::user::User, *};
 use diesel::prelude::*;
-use crate::{*, models::user::User};
 
 pub fn get_user_by_username(filter_username: &String) -> Vec<User> {
     use self::schema::users::dsl::*;

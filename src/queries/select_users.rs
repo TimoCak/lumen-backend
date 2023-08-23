@@ -1,5 +1,5 @@
+use crate::{models::user::User, *};
 use diesel::prelude::*;
-use crate::{*, models::user::User};
 
 /*
 select all users for validation if the username is unique!

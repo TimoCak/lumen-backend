@@ -2,7 +2,13 @@ use diesel::{PgConnection, RunQueryDsl, SelectableHelper};
 
 use crate::models::post::{Post, PostForm};
 
-pub fn create_post(conn: &mut PgConnection, thread_id: i32,author: &str, title: &str, text: &str) -> Post {
+pub fn create_post(
+    conn: &mut PgConnection,
+    thread_id: i32,
+    author: &str,
+    title: &str,
+    text: &str,
+) -> Post {
     use crate::schema::posts;
 
     let new_post = PostForm {

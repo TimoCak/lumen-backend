@@ -16,7 +16,6 @@ pub struct Thread {
     pub categories: Vec<Option<String>>,
 }
 
-
 #[derive(Serialize, Deserialize, Debug, Insertable)]
 #[diesel(table_name = crate::schema::threads)]
 pub struct ThreadForm {
