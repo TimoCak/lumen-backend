@@ -1,5 +1,3 @@
-use std::env;
-
 use actix_cors::Cors;
 use actix_session::{
     config::{BrowserSession, CookieContentSecurity},
@@ -37,9 +35,9 @@ async fn main() -> std::io::Result<()> {
     builder.set_certificate_chain_file("cert.pem").unwrap();
 
     HttpServer::new(move || {
-        let frontend_url = env::var("FRONTEND_URL").expect("FRONTEND_URL must be set!");
+        //let frontend_url = env::var("FRONTEND_URL").expect("FRONTEND_URL must be set!");
         let cors = Cors::default()
-            .allowed_origin(&frontend_url)
+            .allow_any_origin()
             .allow_any_method()
             .supports_credentials()
             .allow_any_header()
