@@ -129,7 +129,7 @@ pub async fn get_posts_by_answer_id(answer_id: web::Path<i32>) -> HttpResponse {
 
 pub async fn get_posts_by_thread_id(thread_id: web::Path<i32>) -> HttpResponse {
     HttpResponse::Ok().content_type(ContentType::json()).body(
-        serde_json::to_string(&select_posts::get_posts_by_answer_id(thread_id.clone())).unwrap(),
+        serde_json::to_string(&select_posts::get_posts_by_thread_id(thread_id.clone())).unwrap(),
     )
 }
 

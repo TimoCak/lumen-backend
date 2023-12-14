@@ -27,12 +27,12 @@ async fn main() -> std::io::Result<()> {
 
     env_logger::init_from_env(Env::default().default_filter_or("info"));
 
-    let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+ /*    let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
 
     builder
         .set_private_key_file("key.pem", SslFiletype::PEM)
         .unwrap();
-    builder.set_certificate_chain_file("cert.pem").unwrap();
+    builder.set_certificate_chain_file("cert.pem").unwrap(); */
 
     HttpServer::new(move || {
         //let frontend_url = env::var("FRONTEND_URL").expect("FRONTEND_URL must be set!");
@@ -86,7 +86,7 @@ async fn main() -> std::io::Result<()> {
                     .route("/threads/{thread_id}", get().to(get_threads_by_id)),
             )
     })
-    .bind_openssl("127.0.0.1:8081", builder)?
+    .bind("127.0.0.1:8081")?
     .run()
     .await
 }
