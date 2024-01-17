@@ -30,7 +30,7 @@ impl PostQuery {
             .filter(id.eq(filter_post_id))
             .select(Post::as_select())
             .load(&mut self.connection())
-            .expect("Error loading user!");
+            .expect("Error loading post!");
     
         results
     }
@@ -56,7 +56,7 @@ impl PostQuery {
 
     pub fn get_posts_by_thread_id(&mut self, filter_thread_id: i32) -> Vec<Post> {
         let results: Vec<Post> = posts
-            .filter(id.eq(filter_thread_id))
+            .filter(thread_id.eq(filter_thread_id))
             .select(Post::as_select())
             .load(&mut self.connection())
             .expect("Error loading user!");

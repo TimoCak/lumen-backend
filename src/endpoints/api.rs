@@ -4,7 +4,7 @@ use crate::models::post::PostForm;
 use crate::models::thread::ThreadForm;
 use crate::models::user::{ClientStoredUser, UserForm, UserLogin};
 use crate::queries::select_user::get_user_by_username;
-use crate::queries::{ insert_thread, post_query, select_posts, select_threads, select_user,
+use crate::queries::{ insert_thread, post_query, select_threads, select_user,
     select_users,
 };
 use actix_session::Session;
@@ -114,22 +114,21 @@ pub async fn get_post_by_id(path: web::Path<i32>) -> HttpResponse {
 pub async fn get_posts() -> HttpResponse {
     HttpResponse::Ok()
         .content_type(ContentType::json())
-        .body(serde_json::to_string(&select_posts::get_posts()).unwrap())
+        .body(serde_json::to_string(&post_query::PostQuery.get_posts()).unwrap())
 }
 
 pub async fn get_posts_by_answer_id(answer_id: web::Path<i32>) -> HttpResponse {
     if answer_id.is_negative() {
         return HttpResponse::NotFound().body("Resource not found!");
     }
-    HttpResponse::Ok().content_type(ContentType::json()).body(
-        serde_json::to_string(&select_posts::get_posts_by_answer_id(answer_id.clone())).unwrap(),
-    )
+
+    let posts = serde_json::to_string(&post_query::PostQuery.get_posts_by_answer_id(answer_id.clone())).unwrap();
+    HttpResponse::Ok().content_type(ContentType::json()).body(posts)
 }
 
 pub async fn get_posts_by_thread_id(thread_id: web::Path<i32>) -> HttpResponse {
-    HttpResponse::Ok().content_type(ContentType::json()).body(
-        serde_json::to_string(&select_posts::get_posts_by_thread_id(thread_id.clone())).unwrap(),
-    )
+    let posts = serde_json::to_string(&post_query::PostQuery.get_posts_by_thread_id(thread_id.clone())).unwrap();
+    HttpResponse::Ok().content_type(ContentType::json()).body(posts)
 }
 
 pub async fn get_threads() -> HttpResponse {
@@ -144,7 +143,7 @@ pub async fn get_threads_by_id(id: web::Path<i32>) -> HttpResponse {
         .body(serde_json::to_string(&select_threads::get_threads_by_id(id.clone())).unwrap())
 }
 
-//User
+
 pub async fn create_thread(req: HttpRequest, thread_form: web::Json<ThreadForm>) -> HttpResponse {
     let auth = Authorization::<Basic>::parse(&req).expect("parsed basic auth credentials");
     let user = get_user_by_username(&auth.as_ref().user_id().to_string());
