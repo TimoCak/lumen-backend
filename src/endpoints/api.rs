@@ -4,8 +4,7 @@ use crate::models::post::PostForm;
 use crate::models::thread::ThreadForm;
 use crate::models::user::{ClientStoredUser, UserForm, UserLogin};
 use crate::queries::select_user::get_user_by_username;
-use crate::queries::{
-    insert_post, insert_thread, select_post, select_posts, select_threads, select_user,
+use crate::queries::{ insert_thread, post_query, select_posts, select_threads, select_user,
     select_users,
 };
 use actix_session::Session;
@@ -101,7 +100,7 @@ pub async fn get_users() -> HttpResponse {
 }
 
 pub async fn get_post_by_id(path: web::Path<i32>) -> HttpResponse {
-    let list = &select_post::get_post_by_post_id(path.clone());
+    let list = &post_query::PostQuery.get_post(path.clone());
 
     if list.len() == 0 {
         return HttpResponse::NotFound().body("post does not exist!");
@@ -198,15 +197,14 @@ pub async fn create_post(req: HttpRequest, post_form: web::Json<PostForm>) -> Ht
     if post_form.author.eq("") || post_form.title.eq("") || post_form.text.eq("") {
         return HttpResponse::BadRequest().body("All fields must be filled!");
     }
-    let conn = &mut establish_connection();
 
-    let inserted_post = insert_post::create_post(
-        conn,
-        post_form.thread_id,
-        post_form.author.as_str(),
-        post_form.title.as_str(),
-        post_form.text.as_str(),
-    );
+    let inserted_post = post_query::PostQuery.create_post(&PostForm {
+        thread_id: post_form.thread_id,
+        author: post_form.author.clone(),
+        title: post_form.title.clone(),
+        text: post_form.text.clone(),
+    });
+
     HttpResponse::Created()
         .content_type(ContentType::json())
         .body(serde_json::to_string(&inserted_post).unwrap())
