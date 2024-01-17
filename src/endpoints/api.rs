@@ -1,9 +1,8 @@
 use crate::endpoints::api_helper::{compare_users, validate_sign_up};
-use crate::establish_connection;
 use crate::models::post::PostForm;
 use crate::models::thread::ThreadForm;
 use crate::models::user::{ClientStoredUser, UserForm, UserLogin};
-use crate::queries::{ insert_thread, post_query, select_threads, user_query, thread_query,
+use crate::queries::{post_query, user_query, thread_query,
 };
 use actix_session::Session;
 use actix_web::http::header::{ContentType, Header};
@@ -161,7 +160,6 @@ pub async fn create_thread(req: HttpRequest, thread_form: web::Json<ThreadForm>)
     if thread_form.author.eq("") || thread_form.title.eq("") || thread_form.text.eq("") {
         return HttpResponse::BadRequest().body("All fields must be filled!");
     }
-    let conn = &mut establish_connection();
 
     let inserted_thread = thread_query::ThreadQuery.create_thread(
         &ThreadForm {
