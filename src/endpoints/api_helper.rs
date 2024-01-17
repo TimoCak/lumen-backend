@@ -1,9 +1,6 @@
-use crate::queries::insert_user::create_user;
-use crate::queries::select_users::get_users;
-use crate::{
-    establish_connection,
-    models::user::{User, UserForm},
-};
+use crate::models::user::{NewUser, Role};
+use crate::queries::user_query;
+use crate::models::user::{User, UserForm};
 use actix_web::{web::Json, HttpResponse};
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
@@ -40,19 +37,20 @@ pub fn validate_sign_up(user_form: Json<UserForm>) -> HttpResponse {
         return HttpResponse::BadRequest().body("fill out all input fields!");
     }
 
-    if !is_username_unique(&user_form.username, get_users()) {
+    if !is_username_unique(&user_form.username, user_query::UserQuery.get_users()) {
         return HttpResponse::BadRequest().body("username is already taken!");
     }
 
     let password = generate_hashed_password(&user_form.password.to_string());
 
-    let conn = &mut establish_connection();
-
-    let _inserted_user = create_user(
-        conn,
-        user_form.username.as_str(),
-        user_form.email.as_str(),
-        password.as_str(),
+    let _inserted_user = user_query::UserQuery.create_user(
+        &NewUser {
+            username: user_form.username.clone(),
+            email: user_form.email.clone(),
+            password: password,
+            role: format!("{}", Role::User)
+        }
+       
     );
 
     HttpResponse::Ok().body("post user successed!")

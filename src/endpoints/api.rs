@@ -3,9 +3,7 @@ use crate::establish_connection;
 use crate::models::post::PostForm;
 use crate::models::thread::ThreadForm;
 use crate::models::user::{ClientStoredUser, UserForm, UserLogin};
-use crate::queries::select_user::get_user_by_username;
-use crate::queries::{ insert_thread, post_query, select_threads, select_user,
-    select_users,
+use crate::queries::{ insert_thread, post_query, select_threads, user_query, thread_query,
 };
 use actix_session::Session;
 use actix_web::http::header::{ContentType, Header};
@@ -31,7 +29,7 @@ pub async fn sign_in(session: Session, user_login: web::Json<UserLogin>) -> Http
 
     let mut client_stored_user = ClientStoredUser::default();
 
-    for user in get_user_by_username(&user_login.username) {
+    for user in user_query::UserQuery.get_user_by_username(&user_login.username) {
         if compare_users(
             &user_login.username,
             &user_login.password,
@@ -70,7 +68,7 @@ pub async fn sign_out(session: Session) -> HttpResponse {
 }
 
 pub async fn get_user_by_id(path: web::Path<i32>) -> HttpResponse {
-    let list = &select_user::get_user_by_user_id(path.clone());
+    let list = &user_query::UserQuery.get_user_by_user_id(path.clone());
 
     if list.len() == 0 {
         return HttpResponse::NotFound().body("user does not exist!");
@@ -82,7 +80,7 @@ pub async fn get_user_by_id(path: web::Path<i32>) -> HttpResponse {
 }
 
 pub async fn get_user(path: web::Path<String>) -> HttpResponse {
-    let list = &select_user::get_user_by_username(&path);
+    let list = &user_query::UserQuery.get_user_by_username(&path);
 
     if list.len() == 0 {
         return HttpResponse::NotFound().body("user does not exist!");
@@ -96,7 +94,7 @@ pub async fn get_user(path: web::Path<String>) -> HttpResponse {
 pub async fn get_users() -> HttpResponse {
     HttpResponse::Ok()
         .content_type(ContentType::json())
-        .body(serde_json::to_string(&select_users::get_users()).unwrap())
+        .body(serde_json::to_string(&user_query::UserQuery.get_users()).unwrap())
 }
 
 pub async fn get_post_by_id(path: web::Path<i32>) -> HttpResponse {
@@ -134,19 +132,19 @@ pub async fn get_posts_by_thread_id(thread_id: web::Path<i32>) -> HttpResponse {
 pub async fn get_threads() -> HttpResponse {
     HttpResponse::Ok()
         .content_type(ContentType::json())
-        .body(serde_json::to_string(&select_threads::get_threads()).unwrap())
+        .body(serde_json::to_string(&thread_query::ThreadQuery.get_threads()).unwrap())
 }
 
 pub async fn get_threads_by_id(id: web::Path<i32>) -> HttpResponse {
     HttpResponse::Ok()
         .content_type(ContentType::json())
-        .body(serde_json::to_string(&select_threads::get_threads_by_id(id.clone())).unwrap())
+        .body(serde_json::to_string(&thread_query::ThreadQuery.get_threads_by_id(id.clone())).unwrap())
 }
 
 
 pub async fn create_thread(req: HttpRequest, thread_form: web::Json<ThreadForm>) -> HttpResponse {
     let auth = Authorization::<Basic>::parse(&req).expect("parsed basic auth credentials");
-    let user = get_user_by_username(&auth.as_ref().user_id().to_string());
+    let user = user_query::UserQuery.get_user_by_username(&auth.as_ref().user_id().to_string());
 
     let username_db = &user.get(0).unwrap().username;
     let password_db = &user.get(0).unwrap().password;
@@ -165,12 +163,13 @@ pub async fn create_thread(req: HttpRequest, thread_form: web::Json<ThreadForm>)
     }
     let conn = &mut establish_connection();
 
-    let inserted_thread = insert_thread::create_thread(
-        conn,
-        thread_form.author.clone(),
-        thread_form.title.clone(),
-        thread_form.text.clone(),
-        thread_form.categories.clone(),
+    let inserted_thread = thread_query::ThreadQuery.create_thread(
+        &ThreadForm {
+            author: thread_form.author.clone(),
+            title: thread_form.title.clone(),
+            text: thread_form.text.clone(),
+            categories: thread_form.categories.clone(),
+        }
     );
     HttpResponse::Created()
         .content_type(ContentType::json())
@@ -179,7 +178,7 @@ pub async fn create_thread(req: HttpRequest, thread_form: web::Json<ThreadForm>)
 
 pub async fn create_post(req: HttpRequest, post_form: web::Json<PostForm>) -> HttpResponse {
     let auth = Authorization::<Basic>::parse(&req).expect("parsed basic auth credentials");
-    let user = get_user_by_username(&auth.as_ref().user_id().to_string());
+    let user = user_query::UserQuery.get_user_by_username(&auth.as_ref().user_id().to_string());
 
     let username_db = &user.get(0).unwrap().username;
     let password_db = &user.get(0).unwrap().password;
