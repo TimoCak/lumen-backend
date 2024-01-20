@@ -1,11 +1,16 @@
 use crate::models::user::{NewUser, Role};
-use crate::queries::user_query;
 use crate::models::user::{User, UserForm};
-use actix_web::{web::Json, HttpResponse};
+use crate::models::ErrorResponse;
+use crate::queries::user_query;
+use actix_web::http::header::{self, Header};
+use actix_web::{web::Json, HttpRequest, HttpResponse};
+use actix_web_httpauth::headers::authorization::{Authorization, Basic};
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
+use chrono::DateTime;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /*
 sign_up - validator
@@ -43,15 +48,12 @@ pub fn validate_sign_up(user_form: Json<UserForm>) -> HttpResponse {
 
     let password = generate_hashed_password(&user_form.password.to_string());
 
-    let _inserted_user = user_query::UserQuery.create_user(
-        &NewUser {
-            username: user_form.username.clone(),
-            email: user_form.email.clone(),
-            password: password,
-            role: format!("{}", Role::User)
-        }
-       
-    );
+    let _inserted_user = user_query::UserQuery.create_user(&NewUser {
+        username: user_form.username.clone(),
+        email: user_form.email.clone(),
+        password: password,
+        role: format!("{}", Role::User),
+    });
 
     HttpResponse::Ok().body("post user successed!")
 }
@@ -80,4 +82,41 @@ pub fn compare_users(
         return true;
     }
     false
+}
+
+//Base Authorization helper
+pub fn check_auth(req: &HttpRequest) -> HttpResponse {
+    let auth = Authorization::<Basic>::parse(req).expect("parsed basic auth credentials");
+    let user = user_query::UserQuery.get_user_by_username(&auth.as_ref().user_id().to_string());
+    let mut error_response: ErrorResponse = ErrorResponse {
+        timestamp: DateTime::from_timestamp(
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+                .try_into()
+                .unwrap(),
+            0,
+        )
+        .unwrap()
+        .to_string(),
+        status: 401,
+        message: "user is not correctly authorized for this action".to_string(),
+        path: req.path().to_string(),
+    };
+
+    if let Some(user_db) = user.get(0) {
+        if auth.as_ref().password().unwrap().ne(&user_db.password)
+            || auth.as_ref().user_id().ne(&user_db.username)
+        {
+            return HttpResponse::Unauthorized()
+                .insert_header(header::ContentType(mime::APPLICATION_JSON))
+                .body(serde_json::to_string(&error_response).unwrap());
+        }
+    } else {
+        error_response.message = "User is not registered!".to_string();
+        return HttpResponse::Unauthorized().body(serde_json::to_string(&error_response).unwrap());
+    }
+
+    return HttpResponse::Ok().finish();
 }

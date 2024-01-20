@@ -25,3 +25,11 @@ pub struct PostForm {
     pub title: String,
     pub text: String,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PostUpdate {
+    pub title: String,
+    pub text: String,
+    pub likes: i32,
+    pub dislikes: i32,
+}

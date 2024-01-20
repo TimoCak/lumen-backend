@@ -43,4 +43,12 @@ impl ThreadQuery {
             .get_result(&mut self.connection())
             .expect("Error saving new user!")
     }
+
+    pub fn update_thread() {
+        todo!()
+    }
+
+    pub fn delete_thread() {
+        todo!()
+    }
 }

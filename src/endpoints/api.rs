@@ -1,14 +1,15 @@
 use crate::endpoints::api_helper::{compare_users, validate_sign_up};
-use crate::models::post::PostForm;
+use crate::models::post::{PostForm, PostUpdate};
 use crate::models::thread::ThreadForm;
 use crate::models::user::{ClientStoredUser, UserForm, UserLogin};
-use crate::queries::{post_query, user_query, thread_query,
-};
+use crate::queries::{post_query, thread_query, user_query};
 use actix_session::Session;
 use actix_web::http::header::{ContentType, Header};
-use actix_web::{options, web, HttpRequest, HttpResponse};
+use actix_web::{options, web, HttpRequest, HttpResponse, Responder};
 use actix_web_httpauth::headers::authorization::{Authorization, Basic};
 use log::info;
+
+use super::api_helper::check_auth;
 
 //Guest
 pub async fn hello() -> HttpResponse {
@@ -119,13 +120,21 @@ pub async fn get_posts_by_answer_id(answer_id: web::Path<i32>) -> HttpResponse {
         return HttpResponse::NotFound().body("Resource not found!");
     }
 
-    let posts = serde_json::to_string(&post_query::PostQuery.get_posts_by_answer_id(answer_id.clone())).unwrap();
-    HttpResponse::Ok().content_type(ContentType::json()).body(posts)
+    let posts =
+        serde_json::to_string(&post_query::PostQuery.get_posts_by_answer_id(answer_id.clone()))
+            .unwrap();
+    HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .body(posts)
 }
 
 pub async fn get_posts_by_thread_id(thread_id: web::Path<i32>) -> HttpResponse {
-    let posts = serde_json::to_string(&post_query::PostQuery.get_posts_by_thread_id(thread_id.clone())).unwrap();
-    HttpResponse::Ok().content_type(ContentType::json()).body(posts)
+    let posts =
+        serde_json::to_string(&post_query::PostQuery.get_posts_by_thread_id(thread_id.clone()))
+            .unwrap();
+    HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .body(posts)
 }
 
 pub async fn get_threads() -> HttpResponse {
@@ -135,11 +144,10 @@ pub async fn get_threads() -> HttpResponse {
 }
 
 pub async fn get_threads_by_id(id: web::Path<i32>) -> HttpResponse {
-    HttpResponse::Ok()
-        .content_type(ContentType::json())
-        .body(serde_json::to_string(&thread_query::ThreadQuery.get_threads_by_id(id.clone())).unwrap())
+    HttpResponse::Ok().content_type(ContentType::json()).body(
+        serde_json::to_string(&thread_query::ThreadQuery.get_threads_by_id(id.clone())).unwrap(),
+    )
 }
-
 
 pub async fn create_thread(req: HttpRequest, thread_form: web::Json<ThreadForm>) -> HttpResponse {
     let auth = Authorization::<Basic>::parse(&req).expect("parsed basic auth credentials");
@@ -161,37 +169,24 @@ pub async fn create_thread(req: HttpRequest, thread_form: web::Json<ThreadForm>)
         return HttpResponse::BadRequest().body("All fields must be filled!");
     }
 
-    let inserted_thread = thread_query::ThreadQuery.create_thread(
-        &ThreadForm {
-            author: thread_form.author.clone(),
-            title: thread_form.title.clone(),
-            text: thread_form.text.clone(),
-            categories: thread_form.categories.clone(),
-        }
-    );
+    let inserted_thread = thread_query::ThreadQuery.create_thread(&ThreadForm {
+        author: thread_form.author.clone(),
+        title: thread_form.title.clone(),
+        text: thread_form.text.clone(),
+        categories: thread_form.categories.clone(),
+    });
     HttpResponse::Created()
         .content_type(ContentType::json())
         .body(serde_json::to_string(&inserted_thread).unwrap())
 }
 
 pub async fn create_post(req: HttpRequest, post_form: web::Json<PostForm>) -> HttpResponse {
-    let auth = Authorization::<Basic>::parse(&req).expect("parsed basic auth credentials");
-    let user = user_query::UserQuery.get_user_by_username(&auth.as_ref().user_id().to_string());
-
-    let username_db = &user.get(0).unwrap().username;
-    let password_db = &user.get(0).unwrap().password;
-
-    if auth.as_ref().password().unwrap().ne(password_db) || auth.as_ref().user_id().ne(username_db)
-    {
-        return HttpResponse::Unauthorized().body("username or password is invalid!");
-    }
-
-    if username_db.ne(&post_form.author) {
-        return HttpResponse::Unauthorized().body("user does not match the author!");
-    }
-
+    let auth_response = check_auth(&req);
+    
     if post_form.author.eq("") || post_form.title.eq("") || post_form.text.eq("") {
         return HttpResponse::BadRequest().body("All fields must be filled!");
+    } else if auth_response.status().is_client_error() {
+        return auth_response;
     }
 
     let inserted_post = post_query::PostQuery.create_post(&PostForm {
@@ -201,14 +196,22 @@ pub async fn create_post(req: HttpRequest, post_form: web::Json<PostForm>) -> Ht
         text: post_form.text.clone(),
     });
 
-    HttpResponse::Created()
+    return HttpResponse::Created()
         .content_type(ContentType::json())
-        .body(serde_json::to_string(&inserted_post).unwrap())
+        .body(serde_json::to_string(&inserted_post).unwrap());
+}
+
+pub async fn update_post(req: HttpRequest, post_update: web::Json<PostUpdate>) -> impl Responder {
+    let mut response = check_auth(&req);
+    /*
+    update and so on
+     */
+    response
 }
 
 #[options("/threads")]
 pub async fn threads_methods() -> HttpResponse {
     HttpResponse::NoContent()
-        .append_header(("Allow", "GET, HEAD, POST"))
+        .append_header(("Allow", "GET, HEAD, POST, DELETE, PUT"))
         .finish()
 }

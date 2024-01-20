@@ -24,3 +24,5 @@ actix-cors = "0.6.4"
 openssl = {version = "0.10.55", features = ["v110"]}
 log = "0.4.19"
 actix-web-httpauth = "0.8.1"
+mime = "0.3.17"
+chrono = "0.4.31"

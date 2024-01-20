@@ -1,7 +1,7 @@
 
 use diesel::prelude::*;
 use crate::establish_connection;
-use crate::models::post::{Post, PostForm};
+use crate::models::post::{Post, PostForm, PostUpdate};
 use crate::schema::posts;
 use crate::schema::posts::dsl::*;
 
@@ -64,12 +64,23 @@ impl PostQuery {
         results
     }
     
-
-    pub fn update_post() {
-        todo!()
+    pub fn update_post(&mut self, filter_post_id: i32, data: &PostUpdate) -> Post {
+        diesel::update(posts.find(filter_post_id))
+           .set((
+                posts::title.eq(data.title.to_owned()),
+                posts::text.eq(data.text.to_owned()),
+                posts::likes.eq(data.likes.to_owned()),
+                posts::dislikes.eq(data.dislikes.to_owned())
+           ))
+           .returning(Post::as_returning())
+           .get_result(&mut self.connection())
+           .expect("Error updating post")
     }
 
-    pub fn delete_post() {
-        todo!()
+    pub fn delete_post(&mut self, filter_post_id: i32) -> Post {
+        diesel::delete(posts.filter(id.eq(filter_post_id)))
+            .returning(Post::as_returning())
+            .get_result(&mut self.connection())
+            .expect("Error deleting posts")
     }
 }

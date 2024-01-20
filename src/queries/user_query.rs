@@ -51,4 +51,12 @@ impl UserQuery {
             .get_result(&mut self.connection())
             .expect("Error saving new user!")
     }
+
+    pub fn update_user() {
+        todo!()
+    }
+
+    pub fn delete_user() {
+        todo!()
+    }
 }
