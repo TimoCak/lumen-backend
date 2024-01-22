@@ -44,11 +44,24 @@ impl ThreadQuery {
             .expect("Error saving new user!")
     }
 
-    pub fn update_thread() {
-        todo!()
+    pub fn update_thread(&mut self, filter_thread_id: i32, data: &Thread) -> Thread {
+        diesel::update(threads.find(filter_thread_id))
+           .set((
+                threads::title.eq(data.title.to_owned()),
+                threads::text.eq(data.text.to_owned()),
+                threads::categories.eq(data.categories.to_owned()),
+                threads::likes.eq(data.likes.to_owned()),
+                threads::dislikes.eq(data.dislikes.to_owned()),
+           ))
+           .returning(Thread::as_returning())
+           .get_result(&mut self.connection())
+           .expect("Error updating post")
     }
 
-    pub fn delete_thread() {
-        todo!()
+    pub fn delete_thread(&mut self, filter_thread_id: i32) -> Thread {
+        diesel::delete(threads.filter(id.eq(filter_thread_id)))
+        .returning(Thread::as_returning())
+        .get_result(&mut self.connection())
+        .expect("Error deleting posts")
     }
 }

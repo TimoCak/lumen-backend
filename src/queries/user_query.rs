@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use crate::models::user::NewUser;
+use crate::models::user::{NewUser, UserForm};
 use crate::{establish_connection, models::user::User};
 use crate::schema::users::dsl::*;
 use crate::schema::users;
@@ -52,11 +52,22 @@ impl UserQuery {
             .expect("Error saving new user!")
     }
 
-    pub fn update_user() {
-        todo!()
+    pub fn update_user(&mut self, filter_user_id: i32, data: &UserForm) -> User {
+        diesel::update(users.find(filter_user_id))
+           .set((
+                users::username.eq(data.username.to_owned()),
+                users::email.eq(data.email.to_owned()),
+                users::password.eq(data.password.to_owned()),
+           ))
+           .returning(User::as_returning())
+           .get_result(&mut self.connection())
+           .expect("Error updating post")
     }
 
-    pub fn delete_user() {
-        todo!()
+    pub fn delete_user(&mut self, filter_user_id: i32) -> User {
+        diesel::delete(users.filter(id.eq(filter_user_id)))
+            .returning(User::as_returning())
+            .get_result(&mut self.connection())
+            .expect("Error deleting posts")
     }
 }
