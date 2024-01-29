@@ -2,7 +2,7 @@ use diesel::{Insertable, Queryable, Selectable};
 use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 
-#[derive(Queryable, Selectable, Serialize)]
+#[derive(Queryable, Selectable, Serialize, Deserialize)]
 #[diesel(table_name = crate::schema::posts)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Post {

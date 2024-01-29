@@ -4,9 +4,8 @@ use crate::models::thread::ThreadForm;
 use crate::models::user::{ClientStoredUser, UserForm, UserLogin};
 use crate::queries::{post_query, thread_query, user_query};
 use actix_session::Session;
-use actix_web::http::header::{ContentType, Header};
+use actix_web::http::header::ContentType;
 use actix_web::{options, web, HttpRequest, HttpResponse, Responder};
-use actix_web_httpauth::headers::authorization::{Authorization, Basic};
 use log::info;
 
 use super::api_helper::check_auth;
@@ -150,23 +149,12 @@ pub async fn get_threads_by_id(id: web::Path<i32>) -> HttpResponse {
 }
 
 pub async fn create_thread(req: HttpRequest, thread_form: web::Json<ThreadForm>) -> HttpResponse {
-    let auth = Authorization::<Basic>::parse(&req).expect("parsed basic auth credentials");
-    let user = user_query::UserQuery.get_user_by_username(&auth.as_ref().user_id().to_string());
-
-    let username_db = &user.get(0).unwrap().username;
-    let password_db = &user.get(0).unwrap().password;
-
-    if auth.as_ref().password().unwrap().ne(password_db) || auth.as_ref().user_id().ne(username_db)
-    {
-        return HttpResponse::Unauthorized().body("username or password is invalid!");
-    }
-
-    if username_db.ne(&thread_form.author) {
-        return HttpResponse::Unauthorized().body("user does not match the author!");
-    }
+    let auth_response = check_auth(&req);
 
     if thread_form.author.eq("") || thread_form.title.eq("") || thread_form.text.eq("") {
         return HttpResponse::BadRequest().body("All fields must be filled!");
+    } else if auth_response.status().is_client_error() {
+        return auth_response;
     }
 
     let inserted_thread = thread_query::ThreadQuery.create_thread(&ThreadForm {
@@ -182,7 +170,7 @@ pub async fn create_thread(req: HttpRequest, thread_form: web::Json<ThreadForm>)
 
 pub async fn create_post(req: HttpRequest, post_form: web::Json<PostForm>) -> HttpResponse {
     let auth_response = check_auth(&req);
-    
+
     if post_form.author.eq("") || post_form.title.eq("") || post_form.text.eq("") {
         return HttpResponse::BadRequest().body("All fields must be filled!");
     } else if auth_response.status().is_client_error() {
@@ -201,16 +189,58 @@ pub async fn create_post(req: HttpRequest, post_form: web::Json<PostForm>) -> Ht
         .body(serde_json::to_string(&inserted_post).unwrap());
 }
 
-pub async fn update_post(req: HttpRequest, post_update: web::Json<PostUpdate>) -> impl Responder {
-    let mut response = check_auth(&req);
-    /*
-    update and so on
-     */
-    response
+pub async fn update_post(
+    req: HttpRequest,
+    post_update: web::Json<PostUpdate>,
+    id: web::Path<i32>,
+) -> impl Responder {
+    let auth_response = check_auth(&req);
+
+    if post_update.title.eq("") || post_update.text.eq("") {
+        return HttpResponse::BadRequest().body("");
+    } else if auth_response.status().is_client_error() {
+        return auth_response;
+    }
+
+    let updated_post = post_query::PostQuery.update_post(*id, &post_update);
+
+    return HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .body(serde_json::to_string(&updated_post).unwrap());
+}
+
+pub async fn delete_post(req: HttpRequest, id: web::Path<i32>) -> impl Responder {
+    let auth_response = check_auth(&req);
+
+    if auth_response.status().is_client_error() {
+        return auth_response;
+    }
+
+    let deleted_post = post_query::PostQuery.delete_post(*id);
+
+    return HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .body(serde_json::to_string(&deleted_post).unwrap());
+}
+
+pub async fn update_thread() -> impl Responder {
+    HttpResponse::Ok().finish()
+}
+
+pub async fn delete_thread() -> impl Responder {
+    HttpResponse::Ok().finish()
+}
+
+pub async fn update_user() -> impl Responder {
+    HttpResponse::Ok().finish()
+}
+
+pub async fn delete_user() -> impl Responder {
+    HttpResponse::Ok().finish()
 }
 
 #[options("/threads")]
-pub async fn threads_methods() -> HttpResponse {
+pub async fn threads_methods() -> impl Responder {
     HttpResponse::NoContent()
         .append_header(("Allow", "GET, HEAD, POST, DELETE, PUT"))
         .finish()
