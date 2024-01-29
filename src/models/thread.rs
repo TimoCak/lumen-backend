@@ -24,3 +24,12 @@ pub struct ThreadForm {
     pub text: String,
     pub categories: Vec<String>,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ThreadUpdate {
+    pub title: String,
+    pub text: String,
+    pub likes: i32,
+    pub dislikes: i32,
+    pub categories: Vec<String>,    
+}

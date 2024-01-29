@@ -1,6 +1,6 @@
 use crate::endpoints::api_helper::{compare_users, validate_sign_up};
 use crate::models::post::{PostForm, PostUpdate};
-use crate::models::thread::ThreadForm;
+use crate::models::thread::{ThreadForm, ThreadUpdate};
 use crate::models::user::{ClientStoredUser, UserForm, UserLogin};
 use crate::queries::{post_query, thread_query, user_query};
 use actix_session::Session;
@@ -223,20 +223,71 @@ pub async fn delete_post(req: HttpRequest, id: web::Path<i32>) -> impl Responder
         .body(serde_json::to_string(&deleted_post).unwrap());
 }
 
-pub async fn update_thread() -> impl Responder {
-    HttpResponse::Ok().finish()
+pub async fn update_thread(
+    req: HttpRequest,
+    thread_update: web::Json<ThreadUpdate>,
+    id: web::Path<i32>,
+) -> impl Responder {
+    let auth_response = check_auth(&req);
+
+    if thread_update.title.eq("") || thread_update.text.eq("") {
+        return HttpResponse::BadRequest().body("");
+    } else if auth_response.status().is_client_error() {
+        return auth_response;
+    }
+    let updated_thread = thread_query::ThreadQuery.update_thread(*id, &thread_update);
+
+    return HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .body(serde_json::to_string(&updated_thread).unwrap());
 }
 
-pub async fn delete_thread() -> impl Responder {
-    HttpResponse::Ok().finish()
+pub async fn delete_thread(req: HttpRequest, id: web::Path<i32>) -> impl Responder {
+    let auth_response = check_auth(&req);
+
+    if auth_response.status().is_client_error() {
+        return auth_response;
+    }
+
+    let deleted_thread = thread_query::ThreadQuery.delete_thread(*id);
+
+    return HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .body(serde_json::to_string(&deleted_thread).unwrap());
 }
 
-pub async fn update_user() -> impl Responder {
-    HttpResponse::Ok().finish()
+pub async fn update_user(
+    req: HttpRequest,
+    user_update: web::Json<UserForm>,
+    id: web::Path<i32>,
+) -> impl Responder {
+    let auth_response = check_auth(&req);
+
+    if user_update.username.eq("") || user_update.password.eq("") || user_update.email.eq("") {
+        return HttpResponse::BadRequest().body("");
+    } else if auth_response.status().is_client_error() {
+        return auth_response;
+    }
+
+    let updated_user = user_query::UserQuery.update_user(*id, &user_update);
+
+    return HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .body(serde_json::to_string(&updated_user).unwrap());
 }
 
-pub async fn delete_user() -> impl Responder {
-    HttpResponse::Ok().finish()
+pub async fn delete_user(req: HttpRequest, id: web::Path<i32>) -> impl Responder {
+    let auth_response = check_auth(&req);
+
+    if auth_response.status().is_client_error() {
+        return auth_response;
+    }
+
+    let deleted_user = user_query::UserQuery.delete_user(*id);
+    
+    return HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .body(serde_json::to_string(&deleted_user).unwrap());
 }
 
 #[options("/threads")]

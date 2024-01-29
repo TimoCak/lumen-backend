@@ -4,7 +4,7 @@ use crate::schema::threads;
 use crate::{models::thread::Thread, *};
 use crate::establish_connection;
 
-use self::models::thread::ThreadForm;
+use self::models::thread::{ThreadForm, ThreadUpdate};
 
 use super::DbQuery;
 
@@ -44,7 +44,7 @@ impl ThreadQuery {
             .expect("Error saving new user!")
     }
 
-    pub fn update_thread(&mut self, filter_thread_id: i32, data: &Thread) -> Thread {
+    pub fn update_thread(&mut self, filter_thread_id: i32, data: &ThreadUpdate) -> Thread {
         diesel::update(threads.find(filter_thread_id))
            .set((
                 threads::title.eq(data.title.to_owned()),

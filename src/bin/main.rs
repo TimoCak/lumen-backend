@@ -7,15 +7,13 @@ use actix_session::{
 use actix_web::{
     cookie::{Key, SameSite},
     middleware::Logger,
-    web::{get, post, scope},
+    web::{delete, get, post, put, scope},
     App, HttpServer,
 };
 use dotenvy::dotenv;
 use env_logger::Env;
 use lumen_backend::endpoints::api::{
-    create_post, create_thread, get_post_by_id, get_posts, get_posts_by_answer_id,
-    get_posts_by_thread_id, get_threads, get_threads_by_id, get_user, get_user_by_id, get_users,
-    hello, sign_in, sign_out, sign_up, threads_methods,
+    create_post, create_thread, delete_post, delete_thread, delete_user, get_post_by_id, get_posts, get_posts_by_answer_id, get_posts_by_thread_id, get_threads, get_threads_by_id, get_user, get_user_by_id, get_users, hello, sign_in, sign_out, sign_up, threads_methods, update_post, update_thread, update_user
 };
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
@@ -69,6 +67,8 @@ async fn main() -> std::io::Result<()> {
                     .route("/user/{username}", get().to(get_user))
                     .route("/users", get().to(get_users))
                     .route("/users/{user_id}", get().to(get_user_by_id))
+                    .route("/users/{user_id}", put().to(update_user))
+                    .route("/users/{user_id}", delete().to(delete_user))
                     .route("/posts", get().to(get_posts))
                     .route("/posts", post().to(create_post))
                     .route("/posts/{post_id}", get().to(get_post_by_id))
@@ -80,10 +80,14 @@ async fn main() -> std::io::Result<()> {
                         "/posts/threads/{thread_id}",
                         get().to(get_posts_by_thread_id),
                     )
+                    .route("/posts/{post_id}", put().to(update_post))
+                    .route("/posts/{post_id}", delete().to(delete_post))
                     .route("/threads", get().to(get_threads))
                     .route("/threads", post().to(create_thread))
                     .service(threads_methods)
-                    .route("/threads/{thread_id}", get().to(get_threads_by_id)),
+                    .route("/threads/{thread_id}", get().to(get_threads_by_id))
+                    .route("/threads/{thread_id}", put().to(update_thread))
+                    .route("/threads/{thread_id}", delete().to(delete_thread)),
             )
     })
     .bind("127.0.0.1:8081")?
