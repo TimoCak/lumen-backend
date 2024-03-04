@@ -42,6 +42,7 @@ pub async fn sign_in(session: Session, user_login: web::Json<UserLogin>) -> Http
                 username: user.username,
                 email: user.email,
                 password: user.password,
+                role: user.role,
             };
 
             break;
@@ -142,7 +143,7 @@ pub async fn get_threads() -> HttpResponse {
         .body(serde_json::to_string(&thread_query::ThreadQuery.get_threads()).unwrap())
 }
 
-pub async fn get_threads_by_id(id: web::Path<i32>) -> HttpResponse {
+pub async fn get_thread_by_id(id: web::Path<i32>) -> HttpResponse {
     HttpResponse::Ok().content_type(ContentType::json()).body(
         serde_json::to_string(&thread_query::ThreadQuery.get_threads_by_id(id.clone())).unwrap(),
     )
