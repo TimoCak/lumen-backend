@@ -8,7 +8,7 @@ use self::models::thread::{ThreadForm, ThreadUpdate};
 
 use super::DbQuery;
 
-pub struct ThreadQuery;
+pub(crate) struct ThreadQuery;
 
 impl DbQuery for ThreadQuery {
     fn connection(&self) -> PgConnection {
@@ -17,7 +17,7 @@ impl DbQuery for ThreadQuery {
 }
 
 impl ThreadQuery {
-    pub fn get_threads(&mut self) -> Vec<Thread> {    
+    pub(crate) fn get_threads(&mut self) -> Vec<Thread> {
         let results = threads
             .select(Thread::as_select())
             .load(&mut self.connection())
@@ -26,7 +26,7 @@ impl ThreadQuery {
         results
     }
 
-    pub fn get_threads_by_id(&mut self, filter_thread_id: i32) -> Vec<Thread> {
+    pub(crate) fn get_threads_by_id(&mut self, filter_thread_id: i32) -> Vec<Thread> {
         let results = threads
             .filter(id.eq(filter_thread_id))
             .select(Thread::as_select())
@@ -36,7 +36,7 @@ impl ThreadQuery {
         results
     }
 
-    pub fn create_thread(&mut self, new_thread: &ThreadForm) -> Thread {
+    pub(crate) fn create_thread(&mut self, new_thread: &ThreadForm) -> Thread {
         diesel::insert_into(threads::table)
             .values(new_thread)
             .returning(Thread::as_returning())
@@ -44,7 +44,7 @@ impl ThreadQuery {
             .expect("Error saving new user!")
     }
 
-    pub fn update_thread(&mut self, filter_thread_id: i32, data: &ThreadUpdate) -> Thread {
+    pub(crate) fn update_thread(&mut self, filter_thread_id: i32, data: &ThreadUpdate) -> Thread {
         diesel::update(threads.find(filter_thread_id))
            .set((
                 threads::title.eq(data.title.to_owned()),
@@ -58,7 +58,7 @@ impl ThreadQuery {
            .expect("Error updating post")
     }
 
-    pub fn delete_thread(&mut self, filter_thread_id: i32) -> Thread {
+    pub(crate) fn delete_thread(&mut self, filter_thread_id: i32) -> Thread {
         diesel::delete(threads.filter(id.eq(filter_thread_id)))
         .returning(Thread::as_returning())
         .get_result(&mut self.connection())

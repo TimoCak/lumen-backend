@@ -250,7 +250,16 @@ pub async fn delete_thread(req: HttpRequest, id: web::Path<i32>) -> impl Respond
         return auth_response;
     }
 
+    //delete target thread
     let deleted_thread = thread_query::ThreadQuery.delete_thread(*id);
+
+    //delete all posts associated with that thread
+    let post_list = post_query::PostQuery.get_posts();
+    for post in post_list {
+        if deleted_thread.id == post.thread_id {
+            post_query::PostQuery.delete_post(post.id);
+        }
+    }
 
     return HttpResponse::Ok()
         .content_type(ContentType::json())
@@ -285,7 +294,7 @@ pub async fn delete_user(req: HttpRequest, id: web::Path<i32>) -> impl Responder
     }
 
     let deleted_user = user_query::UserQuery.delete_user(*id);
-    
+
     return HttpResponse::Ok()
         .content_type(ContentType::json())
         .body(serde_json::to_string(&deleted_user).unwrap());

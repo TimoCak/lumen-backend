@@ -4,7 +4,7 @@ use diesel::{Insertable, Queryable, Selectable};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
-pub enum Role {
+pub(crate) enum Role {
     Guest,
     User,
     Moderator,

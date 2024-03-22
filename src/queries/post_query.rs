@@ -7,7 +7,7 @@ use crate::schema::posts::dsl::*;
 
 use super::DbQuery;
 
-pub struct PostQuery;
+pub(crate) struct PostQuery;
 
 impl DbQuery for PostQuery {
     fn connection(&self) -> PgConnection {
@@ -17,7 +17,7 @@ impl DbQuery for PostQuery {
 
 impl PostQuery {
 
-    pub fn create_post(&mut self, data: &PostForm) -> Post {
+    pub(crate) fn create_post(&mut self, data: &PostForm) -> Post {
         diesel::insert_into(posts::table)
         .values(data)
         .returning(Post::as_returning())
@@ -25,7 +25,7 @@ impl PostQuery {
         .expect("Error saving new post!")
     }
 
-    pub fn get_post(&mut self, filter_post_id: i32) -> Vec<Post>{
+    pub(crate) fn get_post(&mut self, filter_post_id: i32) -> Vec<Post>{
         let results: Vec<Post> = posts
             .filter(id.eq(filter_post_id))
             .select(Post::as_select())
@@ -35,7 +35,7 @@ impl PostQuery {
         results
     }
 
-    pub fn get_posts(&mut self) -> Vec<Post> {
+    pub(crate) fn get_posts(&mut self) -> Vec<Post> {
         let results = posts
             .select(Post::as_select())
             .load(&mut self.connection())
@@ -44,7 +44,7 @@ impl PostQuery {
         results
     }
 
-    pub fn get_posts_by_answer_id(&mut self, filter_answer_id: i32) -> Vec<Post> {
+    pub(crate) fn get_posts_by_answer_id(&mut self, filter_answer_id: i32) -> Vec<Post> {
         let results = posts
             .filter(id.eq(filter_answer_id))
             .select(Post::as_select())
@@ -54,7 +54,7 @@ impl PostQuery {
         results
     }
 
-    pub fn get_posts_by_thread_id(&mut self, filter_thread_id: i32) -> Vec<Post> {
+    pub(crate) fn get_posts_by_thread_id(&mut self, filter_thread_id: i32) -> Vec<Post> {
         let results: Vec<Post> = posts
             .filter(thread_id.eq(filter_thread_id))
             .select(Post::as_select())
@@ -64,7 +64,7 @@ impl PostQuery {
         results
     }
     
-    pub fn update_post(&mut self, filter_post_id: i32, data: &PostUpdate) -> Post {
+    pub(crate) fn update_post(&mut self, filter_post_id: i32, data: &PostUpdate) -> Post {
         diesel::update(posts.find(filter_post_id))
            .set((
                 posts::title.eq(data.title.to_owned()),
@@ -77,7 +77,7 @@ impl PostQuery {
            .expect("Error updating post")
     }
 
-    pub fn delete_post(&mut self, filter_post_id: i32) -> Post {
+    pub(crate) fn delete_post(&mut self, filter_post_id: i32) -> Post {
         diesel::delete(posts.filter(id.eq(filter_post_id)))
             .returning(Post::as_returning())
             .get_result(&mut self.connection())

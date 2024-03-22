@@ -15,7 +15,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /*
 sign_up - validator
 */
-pub fn generate_hashed_password(password: &String) -> String {
+pub(crate) fn generate_hashed_password(password: &String) -> String {
     let salt = SaltString::generate(&mut OsRng);
 
     let argon2 = Argon2::default();
@@ -28,7 +28,7 @@ pub fn generate_hashed_password(password: &String) -> String {
     parsed_hash.to_string()
 }
 
-pub fn is_username_unique(username: &String, users: Vec<User>) -> bool {
+pub(crate) fn is_username_unique(username: &String, users: Vec<User>) -> bool {
     for user in users {
         if user.username.eq(username) {
             return false;
@@ -37,7 +37,7 @@ pub fn is_username_unique(username: &String, users: Vec<User>) -> bool {
     true
 }
 
-pub fn validate_sign_up(user_form: Json<UserForm>) -> HttpResponse {
+pub(crate) fn validate_sign_up(user_form: Json<UserForm>) -> HttpResponse {
     if user_form.username.eq("") || user_form.email.eq("") || user_form.password.eq("") {
         return HttpResponse::BadRequest().body("fill out all input fields!");
     }
@@ -61,7 +61,7 @@ pub fn validate_sign_up(user_form: Json<UserForm>) -> HttpResponse {
 /*
 sign_in - validator
 */
-pub fn compare_passwords(password: &String, hash_string: &String) -> bool {
+pub(crate) fn compare_passwords(password: &String, hash_string: &String) -> bool {
     let alg: &[&dyn PasswordVerifier] = &[&Argon2::default()];
 
     let hash = PasswordHash::new(hash_string).unwrap();
@@ -72,20 +72,20 @@ pub fn compare_passwords(password: &String, hash_string: &String) -> bool {
     }
 }
 
-pub fn compare_users(
+pub(crate) fn compare_users(
     form_username: &String,
     form_password: &String,
     db_username: &String,
-    db_pasword: &String,
+    db_password: &String,
 ) -> bool {
-    if form_username.eq(db_username) && compare_passwords(form_password, db_pasword) {
+    if form_username.eq(db_username) && compare_passwords(form_password, db_password) {
         return true;
     }
     false
 }
 
 //Base Authorization helper
-pub fn check_auth(req: &HttpRequest) -> HttpResponse {
+pub(crate) fn check_auth(req: &HttpRequest) -> HttpResponse {
     let auth = Authorization::<Basic>::parse(req).expect("parsed basic auth credentials");
     let user = user_query::UserQuery.get_user_by_username(&auth.as_ref().user_id().to_string());
     let mut error_response: ErrorResponse = ErrorResponse {
