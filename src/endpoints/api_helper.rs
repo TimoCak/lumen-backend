@@ -12,6 +12,12 @@ use argon2::{
 use chrono::DateTime;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+pub(crate) const DAY_RANGE: u32 = 7;
+
+pub(crate) const URL: &str = "https://newsapi.org/v2";
+pub(crate) const LANGUAGE: &str = "en";
+pub(crate) const TOPIC: &str = "gaming";
+
 /*
 sign_up - validator
 */
@@ -98,8 +104,8 @@ pub(crate) fn check_auth(req: &HttpRequest) -> HttpResponse {
                 .unwrap(),
             0,
         )
-        .unwrap()
-        .to_string(),
+            .unwrap()
+            .to_string(),
         status: 401,
         message: "user is not correctly authorized for this action".to_string(),
         path: req.path().to_string(),
@@ -119,4 +125,11 @@ pub(crate) fn check_auth(req: &HttpRequest) -> HttpResponse {
     }
 
     return HttpResponse::Ok().finish();
+}
+
+pub(crate) fn calc_starting_news_date(current_day: u32) -> u32 {
+    if current_day > DAY_RANGE {
+        return current_day - DAY_RANGE;
+    }
+    1
 }
