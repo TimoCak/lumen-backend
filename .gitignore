@@ -20,5 +20,7 @@ Cargo.lock
 # Added by cargo
 
 /target
-cert.pem
-key.pem
+
+# private files
+*.pem
+.env
