@@ -61,7 +61,7 @@ pub(crate) fn validate_sign_up(user_form: Json<UserForm>) -> HttpResponse {
 /*
 sign_in - validator
 */
-pub(crate) fn compare_passwords(password: &String, hash_string: &String) -> bool {
+pub(crate) fn compare_passwords(password: &str, hash_string: &str) -> bool {
     let alg: &[&dyn PasswordVerifier] = &[&Argon2::default()];
 
     let hash = PasswordHash::new(hash_string).unwrap();
@@ -116,14 +116,10 @@ pub(crate) fn check_auth(req: &HttpRequest) -> HttpResponse {
         .get_user_by_username(&auth.as_ref().unwrap().as_ref().user_id().to_string());
 
     if let Some(user_db) = user.get(0) {
-        if auth
-            .as_ref()
-            .unwrap()
-            .as_ref()
-            .password()
-            .unwrap()
-            .ne(&user_db.password)
-            || auth.unwrap().as_ref().user_id().ne(&user_db.username)
+        if !compare_passwords(
+            auth.as_ref().unwrap().as_ref().password().unwrap(),
+            &user_db.password,
+        ) || auth.unwrap().as_ref().user_id().ne(&user_db.username)
         {
             return response_unauthorized;
         }
