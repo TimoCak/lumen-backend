@@ -1,6 +1,6 @@
-use std::fmt;
 use diesel::{Insertable, Queryable, Selectable};
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 #[derive(Debug)]
 pub(crate) enum Role {
