@@ -3,7 +3,7 @@ use crate::models::user::{User, UserForm};
 use crate::models::ErrorResponse;
 use crate::queries::user_query;
 use actix_web::http::header::{self, Header};
-use actix_web::{web::Json, HttpRequest, HttpResponse};
+use actix_web::{error::ParseError, web::Json, HttpRequest, HttpResponse};
 use actix_web_httpauth::headers::authorization::{Authorization, Basic};
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
@@ -11,12 +11,6 @@ use argon2::{
 };
 use chrono::DateTime;
 use std::time::{SystemTime, UNIX_EPOCH};
-
-pub(crate) const DAY_RANGE: u32 = 7;
-
-pub(crate) const URL: &str = "https://newsapi.org/v2";
-pub(crate) const LANGUAGE: &str = "en";
-pub(crate) const TOPIC: &str = "gaming";
 
 /*
 sign_up - validator
@@ -92,8 +86,6 @@ pub(crate) fn compare_users(
 
 //Base Authorization helper
 pub(crate) fn check_auth(req: &HttpRequest) -> HttpResponse {
-    let auth = Authorization::<Basic>::parse(req).expect("parsed basic auth credentials");
-    let user = user_query::UserQuery.get_user_by_username(&auth.as_ref().user_id().to_string());
     let mut error_response: ErrorResponse = ErrorResponse {
         timestamp: DateTime::from_timestamp(
             SystemTime::now()
@@ -104,32 +96,41 @@ pub(crate) fn check_auth(req: &HttpRequest) -> HttpResponse {
                 .unwrap(),
             0,
         )
-            .unwrap()
-            .to_string(),
+        .unwrap()
+        .to_string(),
         status: 401,
         message: "user is not correctly authorized for this action".to_string(),
         path: req.path().to_string(),
     };
 
+    let response_unauthorized = HttpResponse::Unauthorized()
+        .insert_header(header::ContentType(mime::APPLICATION_JSON))
+        .body(serde_json::to_string(&error_response).unwrap());
+
+    let auth: Result<Authorization<Basic>, ParseError> = Authorization::<Basic>::parse(req);
+
+    if auth.as_ref().is_err() {
+        return response_unauthorized;
+    }
+    let user = user_query::UserQuery
+        .get_user_by_username(&auth.as_ref().unwrap().as_ref().user_id().to_string());
+
     if let Some(user_db) = user.get(0) {
-        if auth.as_ref().password().unwrap().ne(&user_db.password)
-            || auth.as_ref().user_id().ne(&user_db.username)
+        if auth
+            .as_ref()
+            .unwrap()
+            .as_ref()
+            .password()
+            .unwrap()
+            .ne(&user_db.password)
+            || auth.unwrap().as_ref().user_id().ne(&user_db.username)
         {
-            return HttpResponse::Unauthorized()
-                .insert_header(header::ContentType(mime::APPLICATION_JSON))
-                .body(serde_json::to_string(&error_response).unwrap());
+            return response_unauthorized;
         }
     } else {
         error_response.message = "User is not registered!".to_string();
-        return HttpResponse::Unauthorized().body(serde_json::to_string(&error_response).unwrap());
+        return response_unauthorized;
     }
 
     return HttpResponse::Ok().finish();
-}
-
-pub(crate) fn calc_starting_news_date(current_day: u32) -> u32 {
-    if current_day > DAY_RANGE {
-        return current_day - DAY_RANGE;
-    }
-    1
 }

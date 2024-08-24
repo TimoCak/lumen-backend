@@ -1,8 +1,8 @@
-use diesel::prelude::*;
 use crate::models::user::{NewUser, UserForm};
-use crate::{establish_connection, models::user::User};
-use crate::schema::users::dsl::*;
 use crate::schema::users;
+use crate::schema::users::dsl::*;
+use crate::{establish_connection, models::user::User};
+use diesel::prelude::*;
 
 use super::DbQuery;
 
@@ -21,7 +21,7 @@ impl UserQuery {
             .select(User::as_select())
             .load(&mut self.connection())
             .expect("Error loading user!");
-    
+
         results
     }
 
@@ -31,7 +31,7 @@ impl UserQuery {
             .select(User::as_select())
             .load(&mut self.connection())
             .expect("Error loading user!");
-    
+
         results
     }
 
@@ -40,7 +40,7 @@ impl UserQuery {
             .select(User::as_select())
             .load(&mut self.connection())
             .expect("Error loading users");
-    
+
         results
     }
 
@@ -54,14 +54,14 @@ impl UserQuery {
 
     pub(crate) fn update_user(&mut self, filter_user_id: i32, data: &UserForm) -> User {
         diesel::update(users.find(filter_user_id))
-           .set((
+            .set((
                 users::username.eq(data.username.to_owned()),
                 users::email.eq(data.email.to_owned()),
                 users::password.eq(data.password.to_owned()),
-           ))
-           .returning(User::as_returning())
-           .get_result(&mut self.connection())
-           .expect("Error updating post")
+            ))
+            .returning(User::as_returning())
+            .get_result(&mut self.connection())
+            .expect("Error updating post")
     }
 
     pub(crate) fn delete_user(&mut self, filter_user_id: i32) -> User {

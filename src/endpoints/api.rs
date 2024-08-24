@@ -1,20 +1,19 @@
-use crate::endpoints::api_helper::{calc_starting_news_date, compare_users, LANGUAGE, TOPIC, URL, validate_sign_up};
+use crate::endpoints::api_helper::{compare_users, validate_sign_up};
 use crate::models::post::{PostForm, PostUpdate};
 use crate::models::thread::{ThreadForm, ThreadUpdate};
 use crate::models::user::{ClientStoredUser, UserForm, UserLogin};
 use crate::queries::{post_query, thread_query, user_query};
 use actix_session::Session;
 use actix_web::http::header::ContentType;
-use actix_web::{options, web, HttpRequest, HttpResponse, Responder};
-use chrono::{Datelike, DateTime, Local};
+use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use log::info;
-use reqwest::{Client, header};
 
 use super::api_helper::check_auth;
 
-//Guest
 pub async fn hello() -> HttpResponse {
-    HttpResponse::Ok().body("lumen-backend is running!")
+    HttpResponse::Ok()
+        .content_type(ContentType::html())
+        .body("<h1>Lumen API is running!</h1>")
 }
 
 pub async fn sign_up(user_form: web::Json<UserForm>) -> HttpResponse {
@@ -300,38 +299,4 @@ pub async fn delete_user(req: HttpRequest, id: web::Path<i32>) -> impl Responder
     return HttpResponse::Ok()
         .content_type(ContentType::json())
         .body(serde_json::to_string(&deleted_user).unwrap());
-}
-
-//news api
-pub async fn get_news() -> impl Responder {
-    let local_time: DateTime<Local> = Local::now();
-    let request_date = format!(
-        "{}-{}-{}",
-        local_time.year(),
-        local_time.month(),
-        calc_starting_news_date(local_time.day())
-    );
-    let url = format!("{}/everything?q={}&language={}&from={}&sortBy=publishedAt&apiKey=e7ae4bb45c3f443d8710166599bf1119", URL, TOPIC, LANGUAGE, request_date);
-
-    let client = Client::new();
-
-    let response = client.get(&url)
-        .header(header::USER_AGENT, "Lumen/0.1.0")
-        .send()
-        .await
-        .unwrap()
-        .text()
-        .await
-        .unwrap();
-
-    HttpResponse::Ok()
-        .content_type(ContentType::json())
-        .body(response)
-}
-
-#[options("/threads")]
-pub async fn threads_methods() -> impl Responder {
-    HttpResponse::NoContent()
-        .append_header(("Allow", "GET, HEAD, POST, DELETE, PUT"))
-        .finish()
 }

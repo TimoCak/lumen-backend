@@ -12,7 +12,15 @@ use actix_web::{
 };
 use dotenvy::dotenv;
 use env_logger::Env;
-use lumen_backend::endpoints::api::{create_post, create_thread, delete_post, delete_thread, delete_user, get_news, get_post_by_id, get_posts, get_posts_by_answer_id, get_posts_by_thread_id, get_thread_by_id, get_threads, get_user, get_user_by_id, get_users, hello, sign_in, sign_out, sign_up, threads_methods, update_post, update_thread, update_user};
+use lumen_backend::endpoints::{
+    api::{
+        create_post, create_thread, delete_post, delete_thread, delete_user, get_post_by_id,
+        get_posts, get_posts_by_answer_id, get_posts_by_thread_id, get_thread_by_id, get_threads,
+        get_user, get_user_by_id, get_users, hello, sign_in, sign_out, sign_up, update_post,
+        update_thread, update_user,
+    },
+    news_api::get_news,
+};
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
 #[actix_web::main]
@@ -23,7 +31,7 @@ async fn main() -> std::io::Result<()> {
 
     env_logger::init_from_env(Env::default().default_filter_or("info"));
 
- /*    let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+    /*    let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
 
     builder
         .set_private_key_file("key.pem", SslFiletype::PEM)
@@ -82,7 +90,6 @@ async fn main() -> std::io::Result<()> {
                     .route("/posts/{post_id}", delete().to(delete_post))
                     .route("/threads", get().to(get_threads))
                     .route("/threads", post().to(create_thread))
-                    .service(threads_methods)
                     .route("/threads/{thread_id}", get().to(get_thread_by_id))
                     .route("/threads/{thread_id}", put().to(update_thread))
                     .route("/threads/{thread_id}", delete().to(delete_thread))

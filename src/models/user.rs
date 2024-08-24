@@ -4,10 +4,10 @@ use std::fmt;
 
 #[derive(Debug)]
 pub(crate) enum Role {
-    Guest,
     User,
     Moderator,
     Admin,
+    Developer,
     Owner,
 }
 
